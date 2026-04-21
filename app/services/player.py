@@ -53,6 +53,7 @@ async def get_player_list(session, limit, offset):
 
 
 async def get_leaderboard(session, limit, offset):
+    sorting_rules = {"elo": ("elo","name")}
     players = await get_all_players(session, limit, offset, sorting_rules)
 
     if not players.items:
@@ -72,14 +73,17 @@ async def get_player_id(session, player_id):
     if not player:
         raise ApplicationException("Player not found", 404)
 
-    data = to_schema(PlayerResponse, player)
+    data = PlayerResponse(
+        id=player.id,
+        telegram_id=player.telegram_id,
+        name=player.name,
+        elo=player.elo,
+        organized_games=[to_schema(BaseShortResponse, g) for g in player.organized_games],
+        total_games=len(player.games) or 0,
+        total_knockouts=len(player.eliminations) or 0,
+    )
 
-    data.player_games = [to_schema(BaseShortResponse, gp.game) for gp in player.games]
-
-    data.total_games = len(player.games)
-    data.total_knockouts = len(player.eliminations)
-
-    return data
+    return data.model_dump()
 
 
 async def create_player(session, item, tg_id):

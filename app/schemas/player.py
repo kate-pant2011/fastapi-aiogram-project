@@ -7,20 +7,18 @@ class PlayerResponse(BaseModel):
     id: int
     telegram_id: int
     name: str
-    elo: float
-    player_games: list[BaseShortResponse] | None = None
-    organized_games: list[BaseShortResponse] | None
+    elo: float 
+    organized_games: list[BaseShortResponse] | None = None
 
     total_games: int = 0
     total_knockouts: int = 0
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class LeaderboardResponse(BaseModel):
     id: int
     name: str
     elo: float
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LeaderBoardListResponse(BaseModel):

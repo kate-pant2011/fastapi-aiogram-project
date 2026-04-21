@@ -21,12 +21,14 @@ async def get_all_games(session, limit, offset, status, organizer_id):
     result = await get_all_and_total(session, stmt, limit, offset)
     return result
 
-
 async def get_active_game(session):
     stmt = await session.execute(
-        select(Game).where(Game.is_archived.is_(False)).where(Game.status == GameStatus.IN_ACTION)
+        select(Game)
+        .where(Game.is_archived.is_(False))
+        .where(Game.status == GameStatus.IN_ACTION)
+        .order_by(Game.created_at.desc())
     )
-    game = stmt.scalars.first()
+    game = stmt.scalars().first()
     return game
 
 
@@ -62,7 +64,7 @@ async def get_game_by_id(session, id):
         .options(selectinload(Game.organizer))
         .where(Game.id == id)
     )
-    game = result.unique().scalar_one_or_none()
+    game = result.scalar_one_or_none()
     return game
 
 

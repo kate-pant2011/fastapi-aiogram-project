@@ -38,7 +38,7 @@ async def get_leaderboard(tg_id: int, limit: int = 20):
 
 async def get_player_stats(tg_id: int):
     try:
-        response = await client.get(f"/players/me", params={"tg_id": tg_id})
+        response = await client.get("/players/me", params={"tg_id": tg_id})
 
     except httpx.RequestError:
         raise APIError("Server unavailable", 503)

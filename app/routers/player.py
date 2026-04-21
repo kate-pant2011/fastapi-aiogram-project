@@ -44,6 +44,41 @@ async def get_player_list_router(
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
 
 
+@player_router.get("/players/leaderboard", response_model=LeaderBoardListResponse)
+async def get_leaderboard_router(
+    tg_id: int = Query(description="checking active player"),
+    session: AsyncSession = Depends(get_db),
+    limit: int = Query(default=20, le=100),
+    offset: int = Query(default=0),
+):
+    try:
+        await check_player_tg_id(session, tg_id)
+        return await get_leaderboard(session=session, limit=limit, offset=offset)
+
+    except ApplicationException as e:
+        raise HTTPException(status_code=e.code, detail=e.name)
+
+    except Exception as e:
+        print(f"EEEEE {e}")
+        raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
+
+
+@player_router.get("/players/me", response_model=PlayerResponse)
+async def get_player_me_router(
+    tg_id: int = Query(description="checking active player"),
+    session: AsyncSession = Depends(get_db),
+):
+    try:
+        user = await check_player_tg_id(session, tg_id)
+        return await get_player_id(session, user.id)
+
+    except ApplicationException as e:
+        raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
+    
+
 @player_router.get("/players/{id}", response_model=PlayerResponse)
 async def get_player_router(
     id: int,
@@ -61,22 +96,22 @@ async def get_player_router(
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
 
 
-@player_router.get("/players/me", response_model=PlayerResponse)
-async def get_player_router(
+@player_router.get("/players/me/table", response_model=MyTableResponse)
+async def get_my_table_router(
     tg_id: int = Query(description="checking active player"),
     session: AsyncSession = Depends(get_db),
 ):
     try:
         user = await check_player_tg_id(session, tg_id)
-        return await get_player_id(session, user.id)
+        return await get_my_table(session, user.id)
 
     except ApplicationException as e:
         raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
-
-
+    
+    
 @player_router.get("/players/tg/{tg_id}", response_model=BaseShortResponse)
 async def get_player_tg_router(
     tg_id: int,
@@ -160,35 +195,4 @@ async def restore_player_router(
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
 
 
-@player_router.get("/players/leaderboard", response_model=LeaderBoardListResponse)
-async def get_leaderboard_router(
-    tg_id: int = Query(description="checking active player"),
-    session: AsyncSession = Depends(get_db),
-    limit: int = Query(default=20, le=100),
-    offset: int = Query(default=0),
-):
-    try:
-        await check_player_tg_id(session, tg_id)
-        return await get_leaderboard(session=session, limit=limit, offset=offset)
 
-    except ApplicationException as e:
-        raise HTTPException(status_code=e.code, detail=e.name)
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
-
-
-@player_router.get("/players/me/table", response_model=MyTableResponse)
-async def get_my_table_router(
-    tg_id: int = Query(description="checking active player"),
-    session: AsyncSession = Depends(get_db),
-):
-    try:
-        user = await check_player_tg_id(session, tg_id)
-        return await get_my_table(session, user.id)
-
-    except ApplicationException as e:
-        raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")

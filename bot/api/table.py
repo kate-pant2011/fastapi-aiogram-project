@@ -81,7 +81,7 @@ async def get_my_table_api(tg_id: int):
 async def set_player_chips_api(tg_id: int, player_id: int, table_id: int, chips: int):
     try:
         response = await client.patch(
-            "/tables/{table_id}/players/{player_id}",
+            f"/tables/{table_id}/players/{player_id}",
             params={"tg_id": tg_id},
             json={"chips": chips},
         )
@@ -98,8 +98,8 @@ async def set_player_chips_api(tg_id: int, player_id: int, table_id: int, chips:
 
 async def knockout_player_api(tg_id: int, table_id: int, player_id: int):
     try:
-        response = await client.patch(
-            "/tables/{table_id}/players/{player_id}",
+        response = await client.post(
+            f"/tables/{table_id}/players/{player_id}/finish",
             params={"tg_id": tg_id},
             json={"eliminated": True, "chips": 0},
         )

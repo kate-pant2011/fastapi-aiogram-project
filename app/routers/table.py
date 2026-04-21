@@ -27,8 +27,8 @@ async def get_table_list_router(
     offset: int = Query(default=0),
 ):
     try:
-        await check_player_tg_id(session, tg_id, organizer_id)
-        return await get_table_list(session=session, limit=limit, offset=offset, game_id=game_id)
+        await check_player_tg_id(session, tg_id)
+        return await get_table_list(session=session, limit=limit, offset=offset, game_id=game_id, organizer_id=organizer_id)
 
     except ApplicationException as e:
         raise HTTPException(status_code=e.code, detail=e.name)

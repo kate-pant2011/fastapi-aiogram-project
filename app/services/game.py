@@ -217,7 +217,7 @@ async def distribute_tables(session, game_id, user_id):
     )
 
     pl = [table.id for table in new_tables]
-    print(f"TAAABLES {pl}")
+
 
     # distribute table logic
     await add_table_players(session=session, tables=new_tables, size_list=tables_size_list, players=players)
@@ -226,7 +226,7 @@ async def distribute_tables(session, game_id, user_id):
     session.expire_all()
     updated_game = await get_game_by_id(session, game_id)
     ans = updated_game.name
-    print(f"AAAANS {ans}")
+
     
     return await build_distribute_response(updated_game, updated_game.tables)
 
@@ -263,7 +263,7 @@ async def build_distribute_response(game, tables):
     }
 
 
-def split_tables(players: int, max_per_table: int = 9):
+def split_tables(players: int, max_per_table: int = 7):
     tables = math.ceil(players / max_per_table)
     
     base = players // tables

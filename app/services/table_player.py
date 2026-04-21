@@ -62,7 +62,7 @@ async def add_player_at_table(session, table_id, player_id):
 
     total_participants = await table_participants_count(session, table_id)
 
-    if total_participants >= 9:
+    if total_participants >= 8:
         raise ApplicationException("Exceeded maximum participants for table Limit - 9", 400)
 
     try:
@@ -90,9 +90,10 @@ async def patch_table_rights(session, table_id, user_id, player_id):
     if not table_player:
         raise ApplicationException("Player not found at table", 404)
 
+    
     if user_id != table.game.organizer_id:
         if player_id == user_id:
-            raise ApplicationException(f"Player cannot be self-removed from the table", 400)
+            raise ApplicationException(f"Player cannot change his own table", 400)
 
         table_player_rights = await get_table_player_by_id(session, table_id, user_id)
 

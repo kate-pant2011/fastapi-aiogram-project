@@ -19,7 +19,7 @@ async def get_table_by_id(session, table_id):
     result = await session.execute(
         select(Table)
         .options(selectinload(Table.table_participants).selectinload(TablePlayer.player))
-        .options(selectinload(Table.game))
+        .options(selectinload(Table.game).selectinload(Game.players))
         .where(Table.id == table_id)
     )
     table = result.scalar_one_or_none()

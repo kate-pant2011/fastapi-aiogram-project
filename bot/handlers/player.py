@@ -98,8 +98,9 @@ async def cb_join_game(callback: CallbackQuery):
     await callback.answer()
 
     try:
-        tables = await get_tables(game_id=game_id)
-    except APIError:
+        tables = await get_tables(game_id=game_id, tg_id=user.id)
+    except APIError as e:
+        await callback.answer(e.message, show_alert=True)
         return
 
     items = tables.get("items", [])
@@ -111,9 +112,9 @@ async def cb_join_game(callback: CallbackQuery):
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"🪑 Table {t['number']} ({t['table_participants']}/9)",
+                    text=f"🪑 Table {t['number']} ({t['total_participant']}/8)",
                     callback_data=f"join_table:{t['id']}"
-                    if t["table_participants"] < 9
+                    if t["total_participant"] < 8
                     else "table_full",
                 )
             ]
@@ -201,7 +202,8 @@ async def cmd_stats(message: Message):
         return
 
     try:
-        data = await get_player_stats(user.id)
+        data = await get_player_stats(tg_id=int(user.id))
+        elo = int(data['elo'])
 
     except APIError as e:
         if e.status_code == 400:
@@ -216,7 +218,7 @@ async def cmd_stats(message: Message):
 
     text = (
         f"📊 <b>{data['name']}</b>\n\n"
-        f"Rating: <code>{data['elo']}</code>\n"
+        f"Rating: <code>{elo}</code>\n"
         f"Games: {data['total_games']}\n"
         f"KOs: {data['total_knockouts']}\n"
     )

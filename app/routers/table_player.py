@@ -45,7 +45,6 @@ async def add_player_at_table_player_router(
         raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})
 
     except Exception as e:
-        print(f"ERRORRRR {e}")
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
 
 
@@ -67,7 +66,6 @@ async def change_table_player_router(
         raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})
 
     except Exception as e:
-        print(f"ERROR {e}")
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
 
 
