@@ -34,7 +34,9 @@ class GameAddRequest(BaseModel):
 class GPPlayerResponse(BaseModel):
     game_id: int
     player: BaseShortResponse
+    status: str
 
+    model_config = ConfigDict(from_attributes=True)
 
 class GamePlayerList(BaseModel):
     items: list[GPPlayerResponse]

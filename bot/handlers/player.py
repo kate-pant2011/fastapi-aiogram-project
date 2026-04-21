@@ -41,8 +41,9 @@ async def process_name(message: Message, state: FSMContext):
     except APIError as e:
         if e.status_code == 400:
             await message.answer(f"⚠️ {e.message}")
+            await state.clear()
         else:
-            await message.answer("🚫 Server error, try later")
+            await message.answer(f"🚫 Server error, try later - {e}")
         return
 
     await message.answer(f"✅ Registered as <b>{name}</b>")
@@ -71,7 +72,7 @@ async def cmd_join(message: Message):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"🎮 Game {g['id']}", callback_data=f"join_game:{g['id']}")]
+            [InlineKeyboardButton(text=f"{g['name']}", callback_data=f"join_game:{g['id']}")]
             for g in items
         ]
     )
@@ -167,7 +168,7 @@ async def cmd_leave(message: Message):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"🎮 Game {g['id']}", callback_data=f"leave_game:{g['id']}")]
+            [InlineKeyboardButton(text=f"{g['name']}", callback_data=f"leave_game:{g['id']}")]
             for g in items
         ]
     )

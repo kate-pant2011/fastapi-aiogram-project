@@ -1,6 +1,6 @@
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
-from .common import order, get_all_and_total, apply_sorting
+from .common import order, get_all_and_total, get_total_if_join, apply_sorting
 from app.models.game import Game, GamePlayer, Status, GameStatus
 from app.models.player import Player
 from app.models.table import Table
@@ -33,6 +33,7 @@ async def get_active_game(session):
 async def get_game_players(session, game_id, limit, offset, sort=None, sorting_rules=None):
     stmt = (
         select(GamePlayer)
+        .join(GamePlayer.player)
         .options(selectinload(GamePlayer.player))
         .where(GamePlayer.status == Status.JOINED)
         .where(GamePlayer.game_id == game_id)
@@ -44,7 +45,7 @@ async def get_game_players(session, game_id, limit, offset, sort=None, sorting_r
     else:
         stmt = order(stmt=stmt, model=GamePlayer)
 
-    result = await get_all_and_total(session, stmt, limit, offset)
+    result = await get_total_if_join(session, stmt, limit, offset)
 
     return result
 
@@ -61,7 +62,7 @@ async def get_game_by_id(session, id):
         .options(selectinload(Game.organizer))
         .where(Game.id == id)
     )
-    game = result.scalar_one_or_none()
+    game = result.unique().scalar_one_or_none()
     return game
 
 
@@ -79,7 +80,7 @@ async def is_player_in_game(session, player_id, game_id):
 
 
 async def add_game(session, item, user_id):
-    game = Game(name=item.name, start_time=item.start_game, organizer_id=user_id)
+    game = Game(name=item.name, start_time=item.start_time, organizer_id=user_id)
     session.add(game)
     await session.flush()
     return game
@@ -89,6 +90,7 @@ async def add_to_game(session, player_id, game_id):
     game_player = GamePlayer(
         player_id=player_id,
         game_id=game_id,
+        status=Status.JOINED
     )
 
     session.add(game_player)

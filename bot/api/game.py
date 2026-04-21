@@ -37,6 +37,24 @@ async def get_game_in_action(tg_id: int) -> dict | None:
     return response.json()
 
 
+async def add_new_game(tg_id: int, name: str, start_time: datetime):
+    try:
+        response = await client.post(
+            f"/games", 
+            params={"tg_id": tg_id},
+            json={"name": name, "start_time":start_time}
+        )
+
+    except httpx.RequestError:
+        raise APIError("Server unavailable", 503)
+
+    if response.status_code >= 400:
+        message, payload = parse_error(response)
+        raise APIError(message, response.status_code, payload)
+
+    return response.json()
+
+
 async def join_game(tg_id: int, game_id: int):
     try:
         response = await client.post(f"/games/{game_id}/join", params={"tg_id": tg_id})
@@ -76,7 +94,7 @@ async def start_game_api(tg_id: int):
 async def get_my_games_api(tg_id: int, organizer_id):
     try:
         response = await client.get(
-            f"/games", params={"tg_id": tg_id, "organizer_id": organizer_id}
+            f"/games", params={"tg_id": tg_id, "organizer_tg_id": organizer_id}
         )
 
     except httpx.RequestError:

@@ -21,6 +21,21 @@ async def get_all_and_total(session, stmt, limit, offset):
 
     return ORMListResult(total=total, items=items)
 
+async def get_total_if_join(session, stmt, limit, offset):
+    count_stmt = (
+        select(func.count())
+        .select_from(stmt.order_by(None).limit(None).offset(None).subquery())
+    )
+
+    total = await session.scalar(count_stmt)
+
+    stmt = stmt.limit(limit).offset(offset)
+
+    result = await session.execute(stmt)
+    items = result.scalars().unique().all()
+
+    return ORMListResult(total=total, items=items)
+
 
 def apply_sorting(stmt, model: type[BaseModel], sort: str, sorting_rules):
     DESC = False

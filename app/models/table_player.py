@@ -7,7 +7,7 @@ class TablePlayer(BaseModel):
     __tablename__ = "table_players"
 
     player_id = Column(Integer, ForeignKey("players.id"), nullable=False, index=True)
-    player = relationship("Player", back_populates="table_participations")
+    player = relationship("Player", foreign_keys=[player_id], back_populates="table_participations")
 
     table_id = Column(
         Integer, ForeignKey("tables.id", ondelete="CASCADE"), nullable=False, index=True

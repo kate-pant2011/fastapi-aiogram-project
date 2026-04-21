@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.config import ApplicationException
-from app.config.connection import get_db
+from app.config.connection import get_db, get_db_manual
 from app.services.game import (
     create_game,
     change_game,
@@ -30,7 +30,7 @@ game_router = APIRouter()
 
 @game_router.get("/games", response_model=BaseListResponse)
 async def get_game_list_router(
-    organizer_id: int | None = Query(default=None),
+    organizer_tg_id: int | None = Query(default=None),
     session: AsyncSession = Depends(get_db),
     tg_id: int = Query(description="checking active player"),
     status: Literal["awaited", "in_action", "canceled"] | None = Query(default=None),
@@ -40,7 +40,7 @@ async def get_game_list_router(
     try:
         await check_player_tg_id(session, tg_id)
         return await get_game_list(
-            session=session, limit=limit, offset=offset, organizer_id=organizer_id, status=status
+            session=session, limit=limit, offset=offset, organizer_id=organizer_tg_id, status=status
         )
 
     except ApplicationException as e:
@@ -168,9 +168,11 @@ async def join_game_router(
         return await join_game(session, game_id, player.id)
 
     except ApplicationException as e:
+        print(f"EERROR - {e}")
         raise HTTPException(status_code=e.code, detail=e.name)
 
     except Exception as e:
+        print(f"EERROR - {e}")
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
 
 
@@ -195,7 +197,7 @@ async def leave_game_router(
 async def distribute_tables_router(
     id: int,
     tg_id: int = Query(description="checking active player"),
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_db_manual),
 ):
     try:
         user = await check_player_tg_id(session, tg_id)
@@ -205,4 +207,5 @@ async def distribute_tables_router(
         raise HTTPException(status_code=e.code, detail=e.name)
 
     except Exception as e:
+        print(f"EEEEEEEEEROR - {e}")
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")

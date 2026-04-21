@@ -8,12 +8,12 @@ BASE_URL = settings.BASE_URL
 async def register_player(tg_id: int, name: str):
     try:
         response = await client.post(
-            f"/players/tg/{tg_id}",
+            f"/players/{tg_id}",
             json={"name": name},
         )
 
-    except httpx.RequestError:
-        raise APIError("Server unavailable", 503)
+    except httpx.RequestError as e :
+        raise APIError(f"Server unavailable {e}", 503)
 
     if response.status_code >= 400:
         message, payload = parse_error(response)

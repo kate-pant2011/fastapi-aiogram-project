@@ -2,11 +2,13 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
-from bot.api.game import get_my_games_api, distribute_tables_api, get_game_in_action
+from bot.api.game import get_my_games_api, distribute_tables_api, get_game_in_action, add_new_game
 from bot.api.table import get_tables, close_table
 from bot.utils.formatting import format_table_result
 from bot.utils.broadcast import broadcast_table_results
 from bot.config import APIError
+from bot.states.game import CreateGameState
+from datetime import datetime
 
 from bot.states.register import RegisterState
 
@@ -34,18 +36,89 @@ async def cmd_start(message: Message):
         return
 
     items = games.get("items", [])
-    if not items:
-        await message.answer("❌ No awaited games")
-        return
 
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=f"Game #{g['id']}", callback_data=f"start_game:{g['id']}")]
-            for g in games["items"]
-        ]
+    keyboard = []
+
+    for g in items:
+        keyboard.append([
+            InlineKeyboardButton(
+                text=f"{g['name']}",
+                callback_data=f"start_game:{g['id']}"
+            )
+        ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            text="➕ CREATE NEW GAME",
+            callback_data="create_game"
+        )
+    ])
+
+    await message.answer(
+        "🎮 Choose game or create new:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
     )
 
-    await message.answer("🎮 Choose game to start:", reply_markup=keyboard)
+
+@router.callback_query(F.data == "create_game")
+async def cb_create_game(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer("📝 Enter game name:")
+    await state.set_state(CreateGameState.waiting_for_name)
+    await callback.answer()
+
+
+@router.message(CreateGameState.waiting_for_name)
+async def process_game_name(message: Message, state: FSMContext):
+    name = message.text.strip()
+
+    if len(name) < 1:
+        await message.answer("❌ Name too short, try again:")
+        return
+
+    await state.update_data(name=name)
+
+    await message.answer(
+        "📅 Enter start time in format:\n<code>YYYY-MM-DD HH:MM:SS</code>"
+    )
+
+    await state.set_state(CreateGameState.waiting_for_date)
+
+
+@router.message(CreateGameState.waiting_for_date)
+async def process_game_date(message: Message, state: FSMContext):
+    user = message.from_user
+    if not user:
+        return
+
+    raw = message.text.strip()
+
+    try:
+        start_time = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        await message.answer(
+            "❌ Wrong format. Use:\n<code>2026-12-25 19:30:00</code>"
+        )
+        return
+
+    data = await state.get_data()
+    name = data["name"]
+
+    try:
+        game = await add_new_game(
+            tg_id=user.id,
+            name=name,
+            start_time=start_time.isoformat() 
+        )
+
+    except APIError as e:
+        await message.answer(f"⚠️ {e.message}")
+        return
+
+    await message.answer(
+        f"✅ Game <b>{game['name']}</b> created!"
+    )
+
+    await state.clear()
 
 
 @router.callback_query(F.data.startswith("start_game:"))
@@ -80,7 +153,7 @@ async def cb_start_game(callback: CallbackQuery):
             try:
                 await callback.bot.send_message(
                     chat_id=p["telegram_id"],
-                    text=f"🪑 You are seated at table {table['table_number']}",
+                    text=f"🪑 You are seated at table {table['number']}",
                 )
             except Exception:
                 pass

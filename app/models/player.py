@@ -15,7 +15,7 @@ class Player(BaseModel):
     games = relationship("GamePlayer", back_populates="player")
 
     organized_games = relationship("Game", back_populates="organizer")
-    table_participations = relationship("TablePlayer", back_populates="player")
+    table_participations = relationship("TablePlayer", foreign_keys="TablePlayer.player_id", back_populates="player")
 
-    eliminations = relationship("TablePlayer", back_populates="eliminator")
+    eliminations = relationship("TablePlayer", foreign_keys="TablePlayer.eliminated_by_id", back_populates="eliminator")
     elo_history = relationship("EloHistory", back_populates="player")

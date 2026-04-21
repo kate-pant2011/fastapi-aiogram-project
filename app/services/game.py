@@ -7,7 +7,7 @@ from app.database.game import (
     is_player_in_game,
     get_game_players_count,
 )
-from app.database.table_player import get_active_player_table
+from app.database.table_player import get_active_player_table, add_table_players
 from app.config.config import ApplicationException
 from app.schemas.common import to_schema
 from app.schemas.game import GameResponse, GPPlayerResponse
@@ -16,6 +16,15 @@ from datetime import datetime
 from app.models.game import Status, GameStatus
 from app.database.score import get_elo_history_by_player
 from app.database.table import add_tables
+from app.services.player import check_player_tg_id
+from sqlalchemy.exc import IntegrityError
+import math
+from dataclasses import dataclass
+
+@dataclass
+class NewTablesDTO:
+    total_tables: int
+    round: int
 
 
 async def check_game_by_id(session, id):
@@ -31,6 +40,11 @@ async def check_game_by_id(session, id):
 
 
 async def get_game_list(session, limit, offset, status=None, organizer_id=None):
+
+    if organizer_id:
+        organizer = await check_player_tg_id(session, organizer_id)
+        organizer_id = organizer.id
+
     games = await get_all_games(session, limit, offset, status, organizer_id)
 
     return {
@@ -45,7 +59,7 @@ async def get_game_players_list(session, game_id, limit, offset):
     game_players = await get_game_players(session, game_id, limit, offset)
 
     return {
-        "items": [to_schema(GPPlayerResponse, g.player) for g in game_players.items],
+        "items":  [to_schema(GPPlayerResponse, g) for g in game_players.items],
         "total": game_players.total,
         "limit": limit,
         "offset": offset,
@@ -89,20 +103,29 @@ async def join_game(session, game_id, player_id):
 
     in_game = await is_player_in_game(session, player_id, game_id)
 
-    if in_game.status == Status.JOINED:
-        existing = await get_active_player_table(session, player_id, game_id)
+    if in_game:
+        if in_game.status == Status.JOINED:
+            existing = await get_active_player_table(session, player_id, game_id)
+            if existing:
+                raise ApplicationException(
+                    f"Player already joined table number {existing.table.number}_{existing.table.id}",
+                    400,
+                )
+            raise ApplicationException("Player already joined game", 400)
+            
+        elif in_game.status == Status.LEFT:
+            in_game.status = Status.JOINED
+            return {"result": "joined"}
+        
+        else:
+            raise ApplicationException(f"Player already joined", 400)
+    
+    try:
+        await add_to_game(session=session, game_id=game_id, player_id=player_id)
 
-        if existing:
-            raise ApplicationException(
-                f"Player already joined table number {existing.table.number}_{existing.table.id}",
-                400,
-            )
-
-    if in_game.status == Status.LEFT:
-        in_game.status = Status.JOINED
-        return {"result": "joined"}
-
-    await add_to_game(session=session, game_id=game_id, player_id=player_id)
+    except IntegrityError as e:
+        await session.rollback()
+        raise ApplicationException("Player already joined game", 400)
 
     return {"result": "joined"}
 
@@ -179,10 +202,13 @@ async def distribute_tables(session, game_id, user_id):
 
     # count tables logic:
     players_number = await get_game_players_count(session, game_id)
-    tables_number = 0  # total tables
+    tables_size_list = split_tables(players_number)
 
     # create tables logic:
-    new_tables = await add_tables(session=session, game_id=game_id, item=tables_number)
+    new_table_item = NewTablesDTO(
+        total_tables=len(tables_size_list), round=round_number
+    )
+    new_tables = await add_tables(session=session, game_id=game_id, item=new_table_item)
 
     # getting game players by rating:
     sorting = {"elo": ("elo",)}
@@ -190,9 +216,19 @@ async def distribute_tables(session, game_id, user_id):
         session=session, game_id=game_id, limit=100, offset=0, sort="-elo", sorting_rules=sorting
     )
 
-    # distribute table logic
+    pl = [table.id for table in new_tables]
+    print(f"TAAABLES {pl}")
 
-    return await build_distribute_response(game, new_tables)
+    # distribute table logic
+    await add_table_players(session=session, tables=new_tables, size_list=tables_size_list, players=players)
+
+    await session.commit()
+    session.expire_all()
+    updated_game = await get_game_by_id(session, game_id)
+    ans = updated_game.name
+    print(f"AAAANS {ans}")
+    
+    return await build_distribute_response(updated_game, updated_game.tables)
 
 
 async def build_distribute_response(game, tables):
@@ -225,3 +261,14 @@ async def build_distribute_response(game, tables):
         "game_id": game.id,
         "tables": result_tables,
     }
+
+
+def split_tables(players: int, max_per_table: int = 9):
+    tables = math.ceil(players / max_per_table)
+    
+    base = players // tables
+    remainder = players % tables
+    
+    result = [base + 1] * remainder + [base] * (tables - remainder)
+    
+    return result
