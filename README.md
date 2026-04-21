@@ -1,3 +1,4 @@
+```bash
 project/
 ├── app/
 │   ├── config/
@@ -18,3 +19,4 @@ project/
 │
 ├── pyproject.toml
 └── requirements.txt
+```
