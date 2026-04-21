@@ -5,7 +5,7 @@ from app.database.game import (
     add_to_game,
     get_game_players,
     is_player_in_game,
-    get_game_players_count
+    get_game_players_count,
 )
 from app.database.table_player import get_active_player_table
 from app.config.config import ApplicationException
@@ -17,16 +17,18 @@ from app.models.game import Status, GameStatus
 from app.database.score import get_elo_history_by_player
 from app.database.table import add_tables
 
+
 async def check_game_by_id(session, id):
     game = await get_game_by_id(session, id)
-        
+
     if not game:
         raise ApplicationException("game Not found", 404)
 
     if game.is_archived:
         raise ApplicationException(f"A game '{game.name}' is archived", 400, {"id": game.id})
-    
+
     return game
+
 
 async def get_game_list(session, limit, offset, status=None, organizer_id=None):
     games = await get_all_games(session, limit, offset, status, organizer_id)
@@ -38,6 +40,7 @@ async def get_game_list(session, limit, offset, status=None, organizer_id=None):
         "offset": offset,
     }
 
+
 async def get_game_players_list(session, game_id, limit, offset):
     game_players = await get_game_players(session, game_id, limit, offset)
 
@@ -47,7 +50,6 @@ async def get_game_players_list(session, game_id, limit, offset):
         "limit": limit,
         "offset": offset,
     }
-
 
 
 async def get_game_id(session, id):
@@ -73,10 +75,9 @@ async def change_game(session, id, item, user_id):
     start_time = update_data.get("start_time", None) or game.start_time
 
     if start_time:
-        if start_time < datetime.now(): 
+        if start_time < datetime.now():
             raise ApplicationException("Cannot start game earlier than now", 400)
-         
-        
+
     for name, value in update_data.items():
         setattr(game, name, value)
 
@@ -94,18 +95,14 @@ async def join_game(session, game_id, player_id):
         if existing:
             raise ApplicationException(
                 f"Player already joined table number {existing.table.number}_{existing.table.id}",
-                400
+                400,
             )
-    
+
     if in_game.status == Status.LEFT:
         in_game.status = Status.JOINED
         return {"result": "joined"}
 
-    await add_to_game(
-        session=session,
-        game_id=game_id,
-        player_id=player_id
-    )
+    await add_to_game(session=session, game_id=game_id, player_id=player_id)
 
     return {"result": "joined"}
 
@@ -117,14 +114,13 @@ async def leave_game(session, game_id, player_id):
 
     if not in_game:
         raise ApplicationException("Player is not in the game", 400)
-    
+
     else:
         existing = await get_active_player_table(session, player_id, game_id)
 
         if existing:
             raise ApplicationException(
-                f"To leave game please leave table {existing.table.number}_{existing.table.id}",
-                400
+                f"To leave game please leave table {existing.table.number}_{existing.table.id}", 400
             )
 
     in_game.status = Status.LEFT
@@ -137,10 +133,10 @@ async def archive_game(session, id, user_id):
 
     if not game:
         raise ApplicationException("Game not found", 404)
-    
+
     if game.organizer_id != user_id:
         raise ApplicationException("Only organizer can archive game", 400)
-    
+
     if game.is_archived:
         raise ApplicationException(f"Game {game.name} is archived", 400)
 
@@ -156,7 +152,7 @@ async def restore_game(session, id, user_id):
 
     if game.organizer_id != user_id:
         raise ApplicationException("Only organizer can change game", 400)
-    
+
     if not game.is_archived:
         raise ApplicationException("Game is already active", 400)
 
@@ -169,7 +165,7 @@ async def distribute_tables(session, game_id, user_id):
 
     if game.organizer_id != user_id:
         raise ApplicationException("Only organizer can distribute tables", 400)
-    
+
     tables = game.tables
     if not tables:
         round_number = 1
@@ -183,23 +179,18 @@ async def distribute_tables(session, game_id, user_id):
 
     # count tables logic:
     players_number = await get_game_players_count(session, game_id)
-    tables_number = 0 # total tables
+    tables_number = 0  # total tables
 
-    #create tables logic:
+    # create tables logic:
     new_tables = await add_tables(session=session, game_id=game_id, item=tables_number)
 
     # getting game players by rating:
     sorting = {"elo": ("elo",)}
     players = await get_game_players(
-        session=session, 
-        game_id=game_id, 
-        limit=100, 
-        offset=0, 
-        sort="-elo",
-        sorting_rules=sorting
+        session=session, game_id=game_id, limit=100, offset=0, sort="-elo", sorting_rules=sorting
     )
-    
-    # distribute table logic 
+
+    # distribute table logic
 
     return await build_distribute_response(game, new_tables)
 
@@ -210,21 +201,25 @@ async def build_distribute_response(game, tables):
     for table in tables:
         players = []
 
-        for tp in table.table_participants:  
+        for tp in table.table_participants:
             p = tp.player
 
-            players.append({
-                "id": p.id,
-                "name": p.name,
-                "telegram_id": p.telegram_id,
-            })
+            players.append(
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "telegram_id": p.telegram_id,
+                }
+            )
 
-        result_tables.append({
-            "id": table.id,
-            "number": table.number,
-            "round": table.round,
-            "players": players,
-        })
+        result_tables.append(
+            {
+                "id": table.id,
+                "number": table.number,
+                "round": table.round,
+                "players": players,
+            }
+        )
 
     return {
         "game_id": game.id,

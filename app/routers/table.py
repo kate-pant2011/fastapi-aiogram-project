@@ -7,7 +7,7 @@ from app.services.table import (
     delete_table,
     get_table_list,
     get_table_id,
-    change_table
+    change_table,
 )
 from app.schemas.table import TableListResponse, TableResponse, TablesAddRequest, TablePatchRequest
 from app.schemas.common import ResultResponse
@@ -16,14 +16,15 @@ from app.services.player import check_player_tg_id
 
 table_router = APIRouter()
 
+
 @table_router.get("/games/{game_id}/tables", response_model=TableListResponse)
 async def get_table_list_router(
     game_id: int,
     tg_id: int = Query(description="checking active player"),
-    organizer_id: int | None = Query(default=None), 
+    organizer_id: int | None = Query(default=None),
     session: AsyncSession = Depends(get_db),
     limit: int = Query(default=50, le=100),
-    offset: int = Query(default=0)
+    offset: int = Query(default=0),
 ):
     try:
         await check_player_tg_id(session, tg_id, organizer_id)
@@ -52,7 +53,6 @@ async def get_table_router(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
 
-    
 
 @table_router.post("/games/{game_id}/tables", response_model=ResultResponse)
 async def create_tables_router(
@@ -71,6 +71,7 @@ async def create_tables_router(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
 
+
 @table_router.delete("/tables/{table_id}", response_model=ResultResponse)
 async def delete_tables_router(
     table_id: int,
@@ -86,7 +87,6 @@ async def delete_tables_router(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
-
 
 
 @table_router.patch("/tables/{id}", response_model=TableResponse)

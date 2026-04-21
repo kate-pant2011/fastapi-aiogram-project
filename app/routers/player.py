@@ -11,19 +11,20 @@ from app.services.player import (
     get_player_id,
     check_player_tg_id,
     get_leaderboard,
-    get_my_table
+    get_my_table,
 )
 from app.schemas.player import (
-    PlayerResponse, 
-    PlayerAddRequest, 
-    PlayerPatchRequest, 
-    LeaderBoardListResponse, 
-    MyTableResponse
+    PlayerResponse,
+    PlayerAddRequest,
+    PlayerPatchRequest,
+    LeaderBoardListResponse,
+    MyTableResponse,
 )
 from app.schemas.common import BaseShortResponse, BaseListResponse, ResultResponse
 
 
 player_router = APIRouter()
+
 
 @player_router.get("/players", response_model=BaseListResponse)
 async def get_player_list_router(
@@ -89,7 +90,6 @@ async def get_player_tg_router(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
-    
 
 
 @player_router.patch("/players/{id}", response_model=ResultResponse)
@@ -176,7 +176,7 @@ async def get_leaderboard_router(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
-    
+
 
 @player_router.get("/players/me/table", response_model=MyTableResponse)
 async def get_my_table_router(

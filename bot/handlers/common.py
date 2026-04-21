@@ -15,7 +15,7 @@ async def cmd_rating(message: Message):
     user = message.from_user
     if not user:
         return
-    
+
     try:
         data = await get_leaderboard(tg_id=user.id)
 
@@ -62,24 +62,19 @@ async def cmd_tables(message: Message):
 async def cmd_help(message: Message):
     text = (
         "<b>🃏 Poker Bot Commands</b>\n\n"
-
         "<b>👤 Registration</b>\n"
         "/register — create your profile\n\n"
-
         "<b>🎮 Game</b>\n"
         "/join — join current game\n"
         "/leave — leave game\n"
         "/start — start game (organizer only)\n\n"
-
         "<b>📊 Stats</b>\n"
         "/rating — leaderboard (top players)\n"
         "/stats — your personal stats\n\n"
-
         "<b>🪑 Table actions</b>\n"
         "/chips — set chips for players at your table\n"
         "/knockout — mark who you knocked out\n"
         "/finish — close table & calculate results (organizer only)\n\n"
-
         "<b>ℹ️ Other</b>\n"
         "/help — show this message\n"
     )

@@ -20,10 +20,7 @@ async def get_elo_history_by_player(session, player_id, limit, offset):
 
 async def get_game_players_last_rating(session, game_id):
     subquery = (
-        select(
-            EloHistory.player_id,
-            func.max(EloHistory.id).label("max_id")
-        )
+        select(EloHistory.player_id, func.max(EloHistory.id).label("max_id"))
         .where(EloHistory.game_id == game_id)
         .group_by(EloHistory.player_id)
         .subquery()
@@ -37,10 +34,7 @@ async def get_game_players_last_rating(session, game_id):
 
     result = await session.execute(stmt)
 
-    return [
-        {"player": row[0], "rating": row[1]}
-        for row in result.all()
-    ]
+    return [{"player": row[0], "rating": row[1]} for row in result.all()]
 
 
 async def create_elo_history(session, table_player):

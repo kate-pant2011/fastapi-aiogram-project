@@ -23,4 +23,3 @@ class EloHistory(BaseModel):
     players_total = Column(Integer)
     position = Column(Integer)
     chips = Column(Integer, nullable=False, default=0)
-    

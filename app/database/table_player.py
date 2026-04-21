@@ -1,4 +1,3 @@
-
 from app.models.table_player import TablePlayer
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -6,6 +5,7 @@ from app.models.table import Table
 from app.models.game import Game
 from app.models.player import Player
 from datetime import datetime
+
 
 async def get_table_players_by_id(session, table_id):
     result = await session.execute(
@@ -33,11 +33,7 @@ async def get_table_player_by_id(session, table_id, user_id):
 
 
 async def add_table_player(session, table_id, player_id):
-    table_player = TablePlayer(
-        table_id = table_id,
-        player_id = player_id,
-        started_at = datetime.utcnow()
-    )
+    table_player = TablePlayer(table_id=table_id, player_id=player_id, started_at=datetime.utcnow())
     session.add(table_player)
 
     await session.flush()

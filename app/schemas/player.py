@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .common import BaseShortResponse
 from .table_player import TablePlayerShort
 
+
 class PlayerResponse(BaseModel):
     id: int
     telegram_id: int
@@ -13,12 +14,14 @@ class PlayerResponse(BaseModel):
     total_games: int = 0
     total_knockouts: int = 0
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes=True)
+
 
 class LeaderboardResponse(BaseModel):
     id: int
     name: str
     elo: float
+
 
 class LeaderBoardListResponse(BaseModel):
     items: list[LeaderboardResponse]
@@ -46,11 +49,10 @@ class PlayerRatingReponse(BaseModel):
 from typing import Literal
 
 
-
 class TablePlayerInfo(BaseModel):
     id: int
     name: str
-    chips: int 
+    chips: int
 
 
 class MyTableResponse(BaseModel):

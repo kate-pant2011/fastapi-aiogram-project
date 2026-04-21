@@ -4,14 +4,21 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from bot.states.register import RegisterState
 from bot.states.chips import ChipsState
-from bot.api.player import register_player,  get_player_stats
+from bot.api.player import register_player, get_player_stats
 from bot.api.game import join_game, leave_game, get_active_games
-from bot.api.table import get_tables, join_table, set_player_chips_api, get_my_table_api, knockout_player_api
+from bot.api.table import (
+    get_tables,
+    join_table,
+    set_player_chips_api,
+    get_my_table_api,
+    knockout_player_api,
+)
 from aiogram.fsm.state import StatesGroup, State
 from bot.config import APIError
 
 
 router = Router(name="player")
+
 
 @router.message(RegisterState.waiting_for_name)
 async def process_name(message: Message, state: FSMContext):
@@ -42,6 +49,7 @@ async def process_name(message: Message, state: FSMContext):
 
     await state.clear()
 
+
 @router.message(Command("join"))
 async def cmd_join(message: Message):
     user = message.from_user
@@ -63,12 +71,7 @@ async def cmd_join(message: Message):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"🎮 Game {g['id']}",
-                    callback_data=f"join_game:{g['id']}"
-                )
-            ]
+            [InlineKeyboardButton(text=f"🎮 Game {g['id']}", callback_data=f"join_game:{g['id']}")]
             for g in items
         ]
     )
@@ -85,10 +88,7 @@ async def cb_join_game(callback: CallbackQuery):
     game_id = int(callback.data.split(":")[1])
 
     try:
-        result = await join_game(
-            tg_id=user.id,
-            game_id=game_id
-        )
+        result = await join_game(tg_id=user.id, game_id=game_id)
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return
@@ -104,7 +104,7 @@ async def cb_join_game(callback: CallbackQuery):
     items = tables.get("items", [])
 
     if not items:
-        return  
+        return
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -112,17 +112,16 @@ async def cb_join_game(callback: CallbackQuery):
                 InlineKeyboardButton(
                     text=f"🪑 Table {t['number']} ({t['table_participants']}/9)",
                     callback_data=f"join_table:{t['id']}"
-                    if t["table_participants"] < 9 else "table_full"
+                    if t["table_participants"] < 9
+                    else "table_full",
                 )
             ]
             for t in items
         ]
     )
 
-    await callback.message.answer(
-        "🪑 Choose a table:",
-        reply_markup=keyboard
-    )
+    await callback.message.answer("🪑 Choose a table:", reply_markup=keyboard)
+
 
 @router.callback_query(F.data == "table_full")
 async def cb_full(callback: CallbackQuery):
@@ -138,17 +137,12 @@ async def cb_join_table(callback: CallbackQuery):
     table_id = int(callback.data.split(":")[1])
 
     try:
-        result = await join_table(
-            tg_id=user.id,
-            table_id=table_id
-        )
+        result = await join_table(tg_id=user.id, table_id=table_id)
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return
 
-    await callback.message.edit_text(
-        f"✅ Joined table {result['table']['number']}"
-    )
+    await callback.message.edit_text(f"✅ Joined table {result['table']['number']}")
 
     await callback.answer()
 
@@ -160,7 +154,7 @@ async def cmd_leave(message: Message):
         return
 
     try:
-        games = await get_active_games(tg_id=user.id) 
+        games = await get_active_games(tg_id=user.id)
     except APIError as e:
         await message.answer(f"⚠️ {e.message}")
         return
@@ -173,17 +167,13 @@ async def cmd_leave(message: Message):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"🎮 Game {g['id']}",
-                    callback_data=f"leave_game:{g['id']}"
-                )
-            ]
+            [InlineKeyboardButton(text=f"🎮 Game {g['id']}", callback_data=f"leave_game:{g['id']}")]
             for g in items
         ]
     )
 
     await message.answer("👋 Choose a game to leave:", reply_markup=keyboard)
+
 
 @router.callback_query(F.data.startswith("leave_game:"))
 async def cb_leave_game(callback: CallbackQuery):
@@ -194,10 +184,7 @@ async def cb_leave_game(callback: CallbackQuery):
     game_id = int(callback.data.split(":")[1])
 
     try:
-        await leave_game(
-            tg_id=user.id,
-            game_id=game_id
-        )
+        await leave_game(tg_id=user.id, game_id=game_id)
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return
@@ -221,7 +208,7 @@ async def cmd_stats(message: Message):
         else:
             await message.answer("🚫 Server error, try later")
         return
-    
+
     except Exception:
         await message.answer("❌ Cannot load stats right now")
         return
@@ -237,7 +224,7 @@ async def cmd_stats(message: Message):
 
 
 @router.message(Command("chips"))
-async def cmd_chips(message: Message,  state: FSMContext):
+async def cmd_chips(message: Message, state: FSMContext):
     user = message.from_user
     if not user:
         return
@@ -254,26 +241,26 @@ async def cmd_chips(message: Message,  state: FSMContext):
 
     players = data["players"]
     table_id = data["table_id"]
-    await state.update_data(table_id=table_id) 
+    await state.update_data(table_id=table_id)
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"{p['name']} ({p['chips']})",
-                    callback_data=f"chips:{p['id']}"
+                    text=f"{p['name']} ({p['chips']})", callback_data=f"chips:{p['id']}"
                 )
             ]
             for p in players
         ]
     )
 
-    title = "🎮 All players (organizer)" if data["scope"] == "game" else f"🪑 Table {data.get('table_number')}"
-
-    await message.answer(
-        f"{title}\n\nSelect player:",
-        reply_markup=keyboard
+    title = (
+        "🎮 All players (organizer)"
+        if data["scope"] == "game"
+        else f"🪑 Table {data.get('table_number')}"
     )
+
+    await message.answer(f"{title}\n\nSelect player:", reply_markup=keyboard)
 
 
 @router.callback_query(F.data.startswith("chips:"))
@@ -312,10 +299,7 @@ async def process_chips(message: Message, state: FSMContext):
 
     try:
         await set_player_chips_api(
-            tg_id=user.id,
-            player_id=player_id,
-            table_id=table_id,
-            chips=chips
+            tg_id=user.id, player_id=player_id, table_id=table_id, chips=chips
         )
     except Exception as e:
         await message.answer(f"❌ {e}")
@@ -358,17 +342,14 @@ async def cmd_knockout(message: Message):
             [
                 InlineKeyboardButton(
                     text=f"{p['name']} ({p['chips']})",
-                    callback_data=f"knockout:{table_id}:{p['id']}"
+                    callback_data=f"knockout:{table_id}:{p['id']}",
                 )
             ]
             for p in players
         ]
     )
 
-    await message.answer(
-        "💀 Who did you eliminate?",
-        reply_markup=keyboard
-    )
+    await message.answer("💀 Who did you eliminate?", reply_markup=keyboard)
 
 
 @router.callback_query(F.data.startswith("knockout:"))
@@ -382,11 +363,7 @@ async def cb_knockout(callback: CallbackQuery):
     player_id = int(player_id)
 
     try:
-        await knockout_player_api(
-            tg_id=user.id,
-            table_id=table_id,
-            player_id=player_id
-        )
+        await knockout_player_api(tg_id=user.id, table_id=table_id, player_id=player_id)
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return

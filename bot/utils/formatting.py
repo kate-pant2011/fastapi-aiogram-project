@@ -8,9 +8,7 @@ def leaderboard_text(players: list[dict]) -> str:
 
     for i, p in enumerate(players, 1):
         medal = medals.get(i, f"{i}.")
-        lines.append(
-            f"{medal} <b>{p['name']}</b> — <code>{p['elo']}</code>"
-        )
+        lines.append(f"{medal} <b>{p['name']}</b> — <code>{p['elo']}</code>")
 
     return "\n".join(lines)
 

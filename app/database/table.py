@@ -28,13 +28,8 @@ async def get_table_by_id(session, table_id):
 
 async def add_tables(session, game_id, item):
     for num in range(item.total_tables):
-        table = Table(
-            number = num + 1,
-            round = item.round,
-            game_id = game_id
-        )
+        table = Table(number=num + 1, round=item.round, game_id=game_id)
 
         session.add(table)
 
     await session.flush()
-

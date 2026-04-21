@@ -3,6 +3,7 @@ from .common import BaseShortResponse
 from .table import TableShortResponse
 from datetime import datetime
 
+
 class GameResponse(BaseModel):
     id: int
     name: str
@@ -12,7 +13,7 @@ class GameResponse(BaseModel):
     players: list[BaseShortResponse] | None
     tables: list[TableShortResponse] | None
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GamePatchRequest(BaseModel):

@@ -9,13 +9,15 @@ class TableCountResponse(BaseModel):
     number: int
     table_participants: int | None = None
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes=True)
+
 
 class TableShortResponse(BaseModel):
     id: int
     number: int
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes=True)
+
 
 class TableListResponse(BaseModel):
     items: list[TableCountResponse]
@@ -30,9 +32,9 @@ class TableResponse(BaseModel):
     started_at: datetime | None
     finished_at: datetime | None
     players: list[BaseShortResponse] | None = None
-    game: BaseShortResponse 
+    game: BaseShortResponse
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TablesAddRequest(BaseModel):
@@ -40,11 +42,10 @@ class TablesAddRequest(BaseModel):
     round: Literal[1, 2]
     model_config = {"extra": "forbid"}
 
+
 class TablePatchRequest(BaseModel):
     started_at: datetime | None = None
     finished_at: datetime | None = None
     round: int | None = Field(None, gt=0)
 
     model_config = {"extra": "forbid"}
-
-

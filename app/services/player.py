@@ -11,7 +11,8 @@ from app.schemas.common import to_schema
 from app.schemas.player import PlayerResponse, LeaderboardResponse
 from app.schemas.common import BaseShortResponse, ResultResponse
 
-sorting_rules = {"elo": ("elo","created_at")}
+sorting_rules = {"elo": ("elo", "created_at")}
+
 
 async def check_player_by_id(session, id):
     player = await get_player_by_id(session, id)
@@ -21,7 +22,7 @@ async def check_player_by_id(session, id):
 
     if player.is_archived:
         raise ApplicationException(f"A player '{player.name}' is archived", 400, {"id": player.id})
-    
+
     return player
 
 
@@ -33,7 +34,7 @@ async def check_player_tg_id(session, tg_id):
 
     if player.is_archived:
         raise ApplicationException(f"A player '{player.name}' is archived", 400, {"id": player.id})
-    
+
     return player
 
 
@@ -73,10 +74,7 @@ async def get_player_id(session, player_id):
 
     data = to_schema(PlayerResponse, player)
 
-    data.player_games = [
-        to_schema(BaseShortResponse, gp.game)
-        for gp in player.games
-    ]
+    data.player_games = [to_schema(BaseShortResponse, gp.game) for gp in player.games]
 
     data.total_games = len(player.games)
     data.total_knockouts = len(player.eliminations)
@@ -89,10 +87,11 @@ async def create_player(session, item, tg_id):
 
     if player:
         if player.is_archived:
-            raise ApplicationException(f"A player '{player.name}' is archived", 400, {"id": player.id})
-        
+            raise ApplicationException(
+                f"A player '{player.name}' is archived", 400, {"id": player.id}
+            )
+
         raise ApplicationException("Player with such telegram already exists", 400)
-    
 
     new_player = await add_player(session, item, tg_id)
     return new_player
@@ -103,7 +102,7 @@ async def change_player(session, id, item, user_id):
 
     if player.id != user_id:
         raise ApplicationException("Only personal data can be changed", 400)
-    
+
     update_data = item.model_dump(exclude_unset=True)
 
     for name, value in update_data.items():
@@ -114,13 +113,13 @@ async def change_player(session, id, item, user_id):
 
 async def archive_player(session, id, user_id):
     player = await get_player_by_id(session, id)
-    
+
     if not player:
         raise ApplicationException("player Not found", 404)
 
     if player.id != user_id:
         raise ApplicationException("Only personal data can be changed", 400)
-    
+
     if player.is_archived:
         raise ApplicationException(f"A player {player.name} is archived", 400)
 
@@ -130,13 +129,13 @@ async def archive_player(session, id, user_id):
 
 async def restore_player(session, id, user_id):
     player = await get_player_by_id(session, id)
-    
+
     if not player:
         raise ApplicationException("Player Not found", 404)
 
     if player.id != user_id:
         raise ApplicationException("Only personal data can be changed", 400)
-    
+
     if not player.is_archived:
         raise ApplicationException("Player is already active", 400)
 
@@ -166,7 +165,7 @@ async def get_my_table(session, player_id):
                     "chips": tp.chips or 0,
                 }
                 for tp in players
-            ]
+            ],
         }
 
     if game.organizer_id == player_id:
@@ -185,7 +184,7 @@ async def get_my_table(session, player_id):
                     "chips": p.chips or 0,
                 }
                 for p in players
-            ]
+            ],
         }
 
     if not table_player:

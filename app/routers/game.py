@@ -12,14 +12,21 @@ from app.services.game import (
     leave_game,
     distribute_tables,
     get_game_list,
-    get_game_players_list
+    get_game_players_list,
 )
-from app.schemas.game import GameResponse, GameAddRequest, GamePatchRequest, GamePlayerList, DistributeTablesResponse
+from app.schemas.game import (
+    GameResponse,
+    GameAddRequest,
+    GamePatchRequest,
+    GamePlayerList,
+    DistributeTablesResponse,
+)
 from app.schemas.common import BaseShortResponse, BaseListResponse, ResultResponse
 from app.services.player import check_player_tg_id
 from typing import Literal
 
 game_router = APIRouter()
+
 
 @game_router.get("/games", response_model=BaseListResponse)
 async def get_game_list_router(
@@ -53,7 +60,9 @@ async def get_game_players_router(
 ):
     try:
         await check_player_tg_id(session, tg_id)
-        return await get_game_players_list(session=session, game_id=game_id, limit=limit, offset=offset)
+        return await get_game_players_list(
+            session=session, game_id=game_id, limit=limit, offset=offset
+        )
 
     except ApplicationException as e:
         raise HTTPException(status_code=e.code, detail=e.name)
@@ -146,7 +155,7 @@ async def restore_game_router(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
-    
+
 
 @game_router.post("/games/{game_id}/join", response_model=ResultResponse)
 async def join_game_router(
@@ -163,7 +172,7 @@ async def join_game_router(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
-    
+
 
 @game_router.post("/games/{game_id}/leave", response_model=ResultResponse)
 async def leave_game_router(
@@ -180,7 +189,7 @@ async def leave_game_router(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
-    
+
 
 @game_router.post("/games/{id}/distribute-tables", response_model=DistributeTablesResponse)
 async def distribute_tables_router(

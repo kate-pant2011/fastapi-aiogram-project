@@ -1,11 +1,22 @@
 from .base import BaseModel
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum as SQLEnum, UniqueConstraint, DateTime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+    Enum as SQLEnum,
+    UniqueConstraint,
+    DateTime,
+)
 from sqlalchemy.orm import relationship
 from enum import Enum
+
 
 class Status(str, Enum):
     JOINED = "joined"
     LEFT = "left"
+
 
 class GameStatus(str, Enum):
     AWAITED = "awaited"
@@ -23,7 +34,7 @@ class Game(BaseModel):
         nullable=False,
         default=GameStatus.AWAITED,
     )
-    is_archived = Column(Boolean, nullable=False, default=False, index=True) 
+    is_archived = Column(Boolean, nullable=False, default=False, index=True)
 
     players = relationship("GamePlayer", back_populates="game")
 
@@ -49,6 +60,4 @@ class GamePlayer(BaseModel):
         default=Status.JOINED,
     )
 
-    __table_args__ = (
-        UniqueConstraint("player_id", "game_id"),
-    )
+    __table_args__ = (UniqueConstraint("player_id", "game_id"),)

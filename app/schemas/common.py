@@ -10,7 +10,7 @@ class BaseShortResponse(BaseModel):
     id: int
     name: str
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BaseListResponse(BaseModel):
@@ -18,6 +18,7 @@ class BaseListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
 
 class ResultResponse(BaseModel):
     result: str

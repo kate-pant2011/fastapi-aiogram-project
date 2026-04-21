@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message,  CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from bot.api.game import get_my_games_api, distribute_tables_api, get_game_in_action
 from bot.api.table import get_tables, close_table
@@ -32,7 +32,7 @@ async def cmd_start(message: Message):
     except APIError as e:
         await message.answer(f"⚠️ {e.message}")
         return
-    
+
     items = games.get("items", [])
     if not items:
         await message.answer("❌ No awaited games")
@@ -40,12 +40,7 @@ async def cmd_start(message: Message):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"Game #{g['id']}",
-                    callback_data=f"start_game:{g['id']}"
-                )
-            ]
+            [InlineKeyboardButton(text=f"Game #{g['id']}", callback_data=f"start_game:{g['id']}")]
             for g in games["items"]
         ]
     )
@@ -62,15 +57,11 @@ async def cb_start_game(callback: CallbackQuery):
     game_id = int(callback.data.split(":")[1])
 
     try:
-        data = await distribute_tables_api(
-            game_id=game_id,
-            tg_id=user.id
-        )
+        data = await distribute_tables_api(game_id=game_id, tg_id=user.id)
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return
 
-  
     text = [f"🎮 Game #{game_id} started!\n"]
 
     for table in data["tables"]:
@@ -83,13 +74,13 @@ async def cb_start_game(callback: CallbackQuery):
         await callback.message.edit_text("\n".join(text))
     except Exception:
         pass
-    
+
     for table in data["tables"]:
         for p in table["players"]:
             try:
                 await callback.bot.send_message(
                     chat_id=p["telegram_id"],
-                    text=f"🪑 You are seated at table {table['table_number']}"
+                    text=f"🪑 You are seated at table {table['table_number']}",
                 )
             except Exception:
                 pass
@@ -110,14 +101,13 @@ async def cmd_finish(message: Message):
         if not games:
             await message.answer("❌ No active game")
             return
-        
+
         if len(games) > 1:
             keyboard = InlineKeyboardMarkup(
                 inline_keyboard=[
                     [
                         InlineKeyboardButton(
-                            text=f"Game #{g['name']}",
-                            callback_data=f"finish_game:{g['id']}"
+                            text=f"Game #{g['name']}", callback_data=f"finish_game:{g['id']}"
                         )
                     ]
                     for g in games
@@ -126,13 +116,10 @@ async def cmd_finish(message: Message):
 
             await message.answer("🎮 Choose game:", reply_markup=keyboard)
             return
-        
+
         game = games[0]
 
-        tables = await get_tables(
-            tg_id=user.id,
-            game_id=game["id"]
-        )
+        tables = await get_tables(tg_id=user.id, game_id=game["id"])
 
         if not tables.get("items"):
             await message.answer("❌ No tables available")
@@ -143,17 +130,14 @@ async def cmd_finish(message: Message):
                 [
                     InlineKeyboardButton(
                         text=f"Table {t['number']} ({t['table_participants']} players)",
-                        callback_data=f"close_table:{t['id']}"
+                        callback_data=f"close_table:{t['id']}",
                     )
                 ]
                 for t in tables["items"]
             ]
         )
 
-        await message.answer(
-            "🪑 Choose table to finish:",
-            reply_markup=keyboard
-        )
+        await message.answer("🪑 Choose table to finish:", reply_markup=keyboard)
 
     except APIError as e:
         await message.answer(f"⚠️ {e.message}")
@@ -169,10 +153,7 @@ async def cb_finish_game(callback: CallbackQuery):
     game_id = int(callback.data.split(":")[1])
 
     try:
-        tables = await get_tables(
-            tg_id=user.id,
-            game_id=game_id
-        )
+        tables = await get_tables(tg_id=user.id, game_id=game_id)
 
         items = tables.get("items", [])
 
@@ -185,17 +166,14 @@ async def cb_finish_game(callback: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         text=f"Table {t['number']} ({t.get('table_participants', '?')} players)",
-                        callback_data=f"close_table:{t['id']}"
+                        callback_data=f"close_table:{t['id']}",
                     )
                 ]
                 for t in items
             ]
         )
 
-        await callback.message.edit_text(
-            "🪑 Choose table to finish:",
-            reply_markup=keyboard
-        )
+        await callback.message.edit_text("🪑 Choose table to finish:", reply_markup=keyboard)
 
         await callback.answer()
 
@@ -204,7 +182,6 @@ async def cb_finish_game(callback: CallbackQuery):
 
     except Exception:
         await callback.answer("🚫 Server error", show_alert=True)
-       
 
 
 @router.callback_query(F.data.startswith("close_table:"))
@@ -216,14 +193,11 @@ async def cb_close_table(callback: CallbackQuery):
     table_id = int(callback.data.split(":")[1])
 
     try:
-        result = await close_table(
-            tg_id=user.id,
-            table_id=table_id
-        )
+        result = await close_table(tg_id=user.id, table_id=table_id)
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return
-    
+
     except Exception as e:
         await callback.answer(str(e), show_alert=True)
         return

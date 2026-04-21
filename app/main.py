@@ -23,15 +23,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
-formatter = logging.Formatter(
-    "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-handler = RotatingFileHandler(
-    "app.log",
-    maxBytes=1_000_000,
-    backupCount=3
-)
+handler = RotatingFileHandler("app.log", maxBytes=1_000_000, backupCount=3)
 handler.setLevel(logging.DEBUG)
 handler.setFormatter(formatter)
 logger.addHandler(handler)

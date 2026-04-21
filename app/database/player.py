@@ -4,13 +4,12 @@ from .common import order, get_all_and_total, apply_sorting
 from app.models.player import Player
 
 
-
 async def get_all_players(session, limit, offset, sorting_rules=None):
     stmt = select(Player).where(Player.is_archived.is_(False))
 
     if sorting_rules:
-        stmt =  apply_sorting(stmt=stmt, model=Player, sort="-elo", sorting_rules=sorting_rules)
-    
+        stmt = apply_sorting(stmt=stmt, model=Player, sort="-elo", sorting_rules=sorting_rules)
+
     else:
         stmt = order(stmt=stmt, model=Player)
 
@@ -45,14 +44,10 @@ async def get_player_by_tg_id(session, tg_id):
 
 async def add_player(session, item, tg_id):
     player = Player(
-        telegram_id = tg_id,
+        telegram_id=tg_id,
         name=item.name,
     )
 
     session.add(player)
     await session.flush()
     return player
-
-
-
-

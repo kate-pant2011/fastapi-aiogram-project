@@ -19,6 +19,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("bot")
 
+
 async def main():
     bot = Bot(
         token=settings.BOT_TOKEN,
@@ -31,19 +32,20 @@ async def main():
     dp.include_router(player.router)
     dp.include_router(admin.router)
 
-    await bot.set_my_commands([
-        BotCommand(command="register", description="Register"),
-        BotCommand(command="join", description="Join game"),
-        BotCommand(command="start", description="Start game"),
-        BotCommand(command="rating", description="Leaderboard"),
-        BotCommand(command="stats", description="Your stats"),
-        BotCommand(command="knockout", description=" You are eliminator"),
-        BotCommand(command="chips", description="Set chips"),
-        BotCommand(command="finish", description="Finish table"),
-        BotCommand(command="leave", description="Leave game"),
-        BotCommand(command="help", description="Help"),
-    ]) 
-
+    await bot.set_my_commands(
+        [
+            BotCommand(command="register", description="Register"),
+            BotCommand(command="join", description="Join game"),
+            BotCommand(command="start", description="Start game"),
+            BotCommand(command="rating", description="Leaderboard"),
+            BotCommand(command="stats", description="Your stats"),
+            BotCommand(command="knockout", description=" You are eliminator"),
+            BotCommand(command="chips", description="Set chips"),
+            BotCommand(command="finish", description="Finish table"),
+            BotCommand(command="leave", description="Leave game"),
+            BotCommand(command="help", description="Help"),
+        ]
+    )
 
     log.info("Bot started")
 
@@ -54,10 +56,9 @@ async def main():
         log.info("Завершение работы...")
         await bot.session.close()
 
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         log.info("Бот остановлен.")
-
-

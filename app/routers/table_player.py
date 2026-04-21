@@ -8,10 +8,11 @@ from app.services.table_player import (
     get_table_players,
     add_player_at_table,
     change_table_player,
-    leave_table
+    leave_table,
 )
 
 table_player_router = APIRouter()
+
 
 @table_player_router.get("/tables/{table_id}/players", response_model=list[TablePlayerResponse])
 async def get_table_players_router(
@@ -32,7 +33,7 @@ async def get_table_players_router(
 
 @table_player_router.post("/tables/{table_id}/players", response_model=TablePlayerResponse)
 async def add_player_at_table_player_router(
-    table_id: int, 
+    table_id: int,
     tg_id: int = Query(description="checking active player"),
     session: AsyncSession = Depends(get_db),
 ):
@@ -48,7 +49,9 @@ async def add_player_at_table_player_router(
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
 
 
-@table_player_router.patch("/tables/{table_id}/players/{player_id}", response_model=TablePlayerResponse)
+@table_player_router.patch(
+    "/tables/{table_id}/players/{player_id}", response_model=TablePlayerResponse
+)
 async def change_table_player_router(
     table_id: int,
     player_id: int,
@@ -68,7 +71,9 @@ async def change_table_player_router(
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
 
 
-@table_player_router.post("/tables/{table_id}/players/{player_id}/finish", response_model=TablePlayerResponse)
+@table_player_router.post(
+    "/tables/{table_id}/players/{player_id}/finish", response_model=TablePlayerResponse
+)
 async def leave_table_router(
     table_id: int,
     player_id: int,

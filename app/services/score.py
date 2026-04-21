@@ -1,7 +1,7 @@
 from app.database.score import (
     get_elo_history_by_player,
     get_game_players_last_rating,
-    create_elo_history
+    create_elo_history,
 )
 from app.config.config import ApplicationException
 from app.schemas.common import to_schema
@@ -66,7 +66,7 @@ async def close_table_and_update_elo(session, table_id, user_id):
         elo_after = elo_before + elo_change + bounty_bonus
 
         player.elo = elo_after
-        
+
         elo_history = await create_elo_history(
             session=session,
             player_id=player.id,
@@ -79,24 +79,24 @@ async def close_table_and_update_elo(session, table_id, user_id):
             chips=tp.chips,
         )
 
-
         tp.is_active = False
         tp.finished_at = datetime.utcnow()
 
-        elo_results.append({
-            "player": {
-                "id": player.id,
-                "name": player.name,
-            },
-            "game_id": table.game_id,
-            "elo_change": elo_change,
-            "bounty_bonus": bounty_bonus,
-            "position": tp.position,
-            "chips": tp.chips,
-        })
+        elo_results.append(
+            {
+                "player": {
+                    "id": player.id,
+                    "name": player.name,
+                },
+                "game_id": table.game_id,
+                "elo_change": elo_change,
+                "bounty_bonus": bounty_bonus,
+                "position": tp.position,
+                "chips": tp.chips,
+            }
+        )
 
     table.finished_at = datetime.utcnow()
-
 
     elo_results.sort(key=lambda x: x["position"])
 

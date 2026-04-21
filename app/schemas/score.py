@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from .common import BaseShortResponse
 from .table import TableShortResponse
 
+
 class EloHistoryResponse(BaseModel):
     id: int
     player: BaseShortResponse
@@ -50,5 +51,3 @@ class TableResultResponse(BaseModel):
     number: int
     game_id: int
     elo_history: list[EloTableResult]
-
-
