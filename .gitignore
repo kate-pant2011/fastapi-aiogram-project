@@ -1,0 +1,13 @@
+
+__pycache__/
+.venv/
+venv/
+.env
+.env.*
+.idea/
+.vscode/
+config/
+alembic/
+*.log
+*app.log*
+**/config.py

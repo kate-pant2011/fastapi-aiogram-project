@@ -1,0 +1,192 @@
+from app.database.player import (
+    get_all_players,
+    get_player_by_tg_id,
+    get_player_by_id,
+    add_player,
+)
+from app.database.game import get_active_game, get_game_players
+from app.database.table_player import get_active_player_table, get_table_players_by_id
+from app.config.config import ApplicationException
+from app.schemas.common import to_schema
+from app.schemas.player import PlayerResponse, LeaderboardResponse
+from app.schemas.common import BaseShortResponse, ResultResponse
+
+sorting_rules = {"elo": ("elo","created_at")}
+
+async def check_player_by_id(session, id):
+    player = await get_player_by_id(session, id)
+
+    if not player:
+        raise ApplicationException("Player Not found", 404)
+
+    if player.is_archived:
+        raise ApplicationException(f"A player '{player.name}' is archived", 400, {"id": player.id})
+    
+    return player
+
+
+async def check_player_tg_id(session, tg_id):
+    player = await get_player_by_tg_id(session, tg_id)
+
+    if not player:
+        raise ApplicationException("Player Not found", 404)
+
+    if player.is_archived:
+        raise ApplicationException(f"A player '{player.name}' is archived", 400, {"id": player.id})
+    
+    return player
+
+
+async def get_player_list(session, limit, offset):
+    players = await get_all_players(session, limit, offset)
+
+    if not players.items:
+        raise ApplicationException("Player List Not found", 404)
+
+    return {
+        "items": [to_schema(BaseShortResponse, p) for p in players.items],
+        "total": players.total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+async def get_leaderboard(session, limit, offset):
+    players = await get_all_players(session, limit, offset, sorting_rules)
+
+    if not players.items:
+        raise ApplicationException("Player List Not found", 404)
+
+    return {
+        "items": [to_schema(LeaderboardResponse, p) for p in players.items],
+        "total": players.total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+async def get_player_id(session, player_id):
+    player = await check_player_by_id(session, player_id)
+
+    if not player:
+        raise ApplicationException("Player not found", 404)
+
+    data = to_schema(PlayerResponse, player)
+
+    data.player_games = [
+        to_schema(BaseShortResponse, gp.game)
+        for gp in player.games
+    ]
+
+    data.total_games = len(player.games)
+    data.total_knockouts = len(player.eliminations)
+
+    return data
+
+
+async def create_player(session, item, tg_id):
+    player = await get_player_by_tg_id(session, tg_id)
+
+    if player:
+        if player.is_archived:
+            raise ApplicationException(f"A player '{player.name}' is archived", 400, {"id": player.id})
+        
+        raise ApplicationException("Player with such telegram already exists", 400)
+    
+
+    new_player = await add_player(session, item, tg_id)
+    return new_player
+
+
+async def change_player(session, id, item, user_id):
+    player = await check_player_by_id(session, id)
+
+    if player.id != user_id:
+        raise ApplicationException("Only personal data can be changed", 400)
+    
+    update_data = item.model_dump(exclude_unset=True)
+
+    for name, value in update_data.items():
+        setattr(player, name, value)
+
+    return {"result": "changed"}
+
+
+async def archive_player(session, id, user_id):
+    player = await get_player_by_id(session, id)
+    
+    if not player:
+        raise ApplicationException("player Not found", 404)
+
+    if player.id != user_id:
+        raise ApplicationException("Only personal data can be changed", 400)
+    
+    if player.is_archived:
+        raise ApplicationException(f"A player {player.name} is archived", 400)
+
+    player.is_archived = True
+    return player
+
+
+async def restore_player(session, id, user_id):
+    player = await get_player_by_id(session, id)
+    
+    if not player:
+        raise ApplicationException("Player Not found", 404)
+
+    if player.id != user_id:
+        raise ApplicationException("Only personal data can be changed", 400)
+    
+    if not player.is_archived:
+        raise ApplicationException("Player is already active", 400)
+
+    player.is_archived = False
+    return player
+
+
+async def get_my_table(session, player_id):
+    game = await get_active_game(session)
+    if not game:
+        raise ApplicationException("No active game", 404)
+
+    table_player = await get_active_player_table(session, player_id, game.id)
+
+    if table_player:
+        table = table_player.table
+        players = await get_table_players_by_id(session, table.id)
+
+        return {
+            "scope": "table",
+            "table_id": table.id,
+            "table_number": table.number,
+            "players": [
+                {
+                    "id": tp.player.id,
+                    "name": tp.player.name,
+                    "chips": tp.chips or 0,
+                }
+                for tp in players
+            ]
+        }
+
+    if game.organizer_id == player_id:
+        players_data = await get_game_players(session, game.id, limit=50, offset=0)
+
+        players = players_data.items
+
+        return {
+            "scope": "game",
+            "table_id": None,
+            "table_number": None,
+            "players": [
+                {
+                    "id": p.player.id,
+                    "name": p.player.name,
+                    "chips": p.chips or 0,
+                }
+                for p in players
+            ]
+        }
+
+    if not table_player:
+        raise ApplicationException("Player not at table", 404)

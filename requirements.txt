@@ -1,0 +1,14 @@
+fastapi[all]
+uvicorn[standard]
+python-dotenv
+psycopg2-binary
+SQLAlchemy
+asyncpg
+pytest
+pytest-asyncio
+ruff
+black
+alembic
+requests
+aiogram
+httpx
