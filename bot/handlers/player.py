@@ -239,21 +239,24 @@ async def cmd_chips(message: Message, state: FSMContext):
         return
 
     except Exception:
+        await state.clear()
         await message.answer("🚫 Server error")
         return
 
     players = data["players"]
-    table_id = data["table_id"]
+    table_id = data["table_id"] 
+ 
+
     await state.update_data(table_id=table_id)
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"{p['name']} ({p['chips']})", callback_data=f"chips:{p['id']}"
+                    text=f"{p['name']} ({p['chips']})", callback_data=f"chips:{p['id']}:{p['table_id']}"
                 )
             ]
-            for p in players
+            for p in players if isinstance(p.get("table_id"), int)
         ]
     )
 
@@ -272,9 +275,12 @@ async def cb_choose_player(callback: CallbackQuery, state: FSMContext):
     if not user:
         return
 
-    player_id = int(callback.data.split(":")[1])
+    player_id, table_id = map(int, callback.data.split(":")[1:])
 
     await state.update_data(player_id=player_id)
+    
+    if table_id is not None:
+        await state.update_data(table_id=table_id)
 
     await callback.message.answer("💰 Enter chips amount:")
     await state.set_state(ChipsState.waiting_for_amount)
@@ -306,6 +312,7 @@ async def process_chips(message: Message, state: FSMContext):
         )
     except Exception as e:
         await message.answer(f"❌ {e}")
+        await state.clear()
         return
 
     await message.answer("✅ Chips updated")

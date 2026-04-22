@@ -36,7 +36,7 @@ async def get_game_players(session, game_id, limit, offset, sort=None, sorting_r
     stmt = (
         select(GamePlayer)
         .join(GamePlayer.player)
-        .options(selectinload(GamePlayer.player))
+        .options(selectinload(GamePlayer.player).selectinload(Player.table_participations).selectinload(TablePlayer.table))
         .where(GamePlayer.status == Status.JOINED)
         .where(GamePlayer.game_id == game_id)
     )
@@ -50,6 +50,7 @@ async def get_game_players(session, game_id, limit, offset, sort=None, sorting_r
     result = await get_total_if_join(session, stmt, limit, offset)
 
     return result
+
 
 
 async def get_game_by_id(session, id):

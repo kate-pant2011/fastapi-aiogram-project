@@ -6,12 +6,11 @@ from app.database.score import (
 from app.config.config import ApplicationException
 from app.schemas.common import to_schema
 from app.database.table import get_table_by_id
-from app.database.table_player import get_table_players_by_id
+from app.database.table_player import get_table_players_by_id, get_all_table_players_by_id
 from app.schemas.score import EloHistoryResponse
 from app.schemas.common import BaseShortResponse
-from sqlalchemy.exc import IntegrityError
 from datetime import datetime
-
+from collections import defaultdict
 
 async def get_player_elo_history(session, player_id, limit, offset):
     result = await get_elo_history_by_player(session, player_id, limit, offset)
@@ -47,40 +46,64 @@ async def close_table_and_update_elo(session, table_id, user_id):
     if table.game.organizer_id != user_id:
         raise ApplicationException("Only organizer can close table", 400)
 
-    table_players = await get_table_players_by_id(session, table_id)
+    table_players = await get_all_table_players_by_id(session, table_id)
+    assign_positions(table_players)
 
     if not table_players:
         raise ApplicationException("No players at table", 400)
 
-    # calculate_elo(players)
 
     elo_results = []
+    players = [tp.player for tp in table_players]
+    total_players = len(players)
+    knockouts_map = defaultdict(list)
+    players_map = {p.id: p for p in players}
 
+    for tp in table_players:
+        if tp.eliminated_by_id:
+            victim_elo = tp.player.elo
+            knockouts_map[tp.eliminated_by_id].append(victim_elo)
+    
     for tp in table_players:
         player = tp.player
 
-        # add calculation rules
+        opponents_elos = [
+            p.elo for p in players if p.id != player.id
+        ]
+
         elo_before = player.elo
-        elo_change = 0.0
-        bounty_bonus = 0.0
-        elo_after = elo_before + elo_change + bounty_bonus
+
+        elo_change = elo_delta(
+            player,
+            opponents_elos,
+            tp.position,
+            total_players
+        )
+
+        bounty = bounty_bonus(player.id, knockouts_map, players_map)
+
+        total_change = elo_change + bounty
+        elo_after = max(100, elo_before + total_change)
 
         player.elo = elo_after
 
-        elo_history = await create_elo_history(
+        await create_elo_history(
             session=session,
             player_id=player.id,
             game_id=table.game_id,
-            elo_before=elo_before,
-            elo_after=elo_after,
-            elo_change=elo_change,
-            bounty_bonus=bounty_bonus,
+            table_id=table.id,
+            elo_before=round(elo_before, 2),
+            elo_after=round(elo_after, 2),
+            elo_change=round(elo_change, 2),
+            bounty_bonus=round(bounty, 2),
             position=tp.position,
             chips=tp.chips,
+            players_total=total_players,
         )
 
         tp.is_active = False
         tp.finished_at = datetime.utcnow()
+
 
         elo_results.append(
             {
@@ -89,8 +112,8 @@ async def close_table_and_update_elo(session, table_id, user_id):
                     "name": player.name,
                 },
                 "game_id": table.game_id,
-                "elo_change": elo_change,
-                "bounty_bonus": bounty_bonus,
+                "elo_change": round(elo_change, 2),
+                "bounty_bonus": round(bounty, 2),
                 "position": tp.position,
                 "chips": tp.chips,
             }
@@ -106,3 +129,49 @@ async def close_table_and_update_elo(session, table_id, user_id):
         "game_id": table.game_id,
         "elo_history": elo_results,
     }
+
+
+def elo_delta(player, opponents, position, total_players):
+    s = actual_score(position, total_players)
+    e = expected_score(player.elo, opponents)
+    k = k_factor(player.games_played, player.elo)
+    return k * (total_players - 1) * (s - e)
+
+def bounty_bonus(player_id, knockouts_map, players_map):
+    victims = knockouts_map.get(player_id, [])
+    bonus = 0.0
+    for v_elo in victims:
+        raw = 5 + (v_elo - players_map[player_id].elo) / 100
+        bonus += max(2, raw)
+    return bonus
+
+def expected_score(player_elo, opponents):
+    if not opponents:
+        return 0.5
+    return sum(
+        1 / (1 + 10 ** ((opp - player_elo) / 400))
+        for opp in opponents
+    ) / len(opponents)
+
+def actual_score(position, total):
+    return (total - position) / (total - 1) if total > 1 else 1.0
+
+def k_factor(games_played, elo):
+    if games_played < 10:
+        return 40
+    if elo < 1400:
+        return 20
+    return 10
+
+
+def assign_positions(table_players):
+    placed = [tp for tp in table_players if tp.position is not None]
+    active = [tp for tp in table_players if tp.position is None]
+
+    active.sort(key=lambda x: x.chips, reverse=True)
+
+    current_position = 1
+
+    for tp in active:
+        tp.position = current_position
+        current_position += 1

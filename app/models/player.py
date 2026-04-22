@@ -8,11 +8,12 @@ class Player(BaseModel):
 
     name = Column(String, nullable=False, unique=True)
     telegram_id = Column(Integer, unique=True, nullable=False, index=True)
-    elo = Column(Float, default=0)
+    elo = Column(Float, default=1000)
 
     is_archived = Column(Boolean, nullable=False, default=False, index=True)
 
     games = relationship("GamePlayer", back_populates="player")
+    games_played = Column(Integer, nullable=False, default=0)
 
     organized_games = relationship("Game", back_populates="organizer")
     table_participations = relationship("TablePlayer", foreign_keys="TablePlayer.player_id", back_populates="player")

@@ -90,11 +90,10 @@ async def patch_table_rights(session, table_id, user_id, player_id):
     if not table_player:
         raise ApplicationException("Player not found at table", 404)
 
+    if player_id == user_id:
+        raise ApplicationException(f"Player cannot choose himself", 400)
     
     if user_id != table.game.organizer_id:
-        if player_id == user_id:
-            raise ApplicationException(f"Player cannot change his own table", 400)
-
         table_player_rights = await get_table_player_by_id(session, table_id, user_id)
 
         if not table_player_rights:
@@ -102,7 +101,12 @@ async def patch_table_rights(session, table_id, user_id, player_id):
 
         return table_player, "table_player"
 
-    return table_player, "organizer"
+    table_player_rights = await get_table_player_by_id(session, table_id, user_id)
+
+    if table_player_rights:
+        return table_player, "table_player"
+    else:
+        return table_player, "organizer"
 
 
 async def leave_table(session, item, table_id, user_id, player_id):

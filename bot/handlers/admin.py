@@ -180,7 +180,7 @@ async def cmd_finish(message: Message):
                 inline_keyboard=[
                     [
                         InlineKeyboardButton(
-                            text=f"Game #{g['name']}", callback_data=f"finish_game:{g['id']}"
+                            text=f"{g['name']}", callback_data=f"finish_game:{g['id']}"
                         )
                     ]
                     for g in games
@@ -194,7 +194,9 @@ async def cmd_finish(message: Message):
 
         tables = await get_tables(tg_id=user.id, game_id=game["id"])
 
-        if not tables.get("items"):
+        items = tables.get("items", [])
+
+        if not items:
             await message.answer("❌ No tables available")
             return
 
@@ -202,11 +204,11 @@ async def cmd_finish(message: Message):
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text=f"Table {t['number']} ({t['table_participants']} players)",
+                        text=f"Table {t['number']} ({t.get('total_participants', '?')} players)",
                         callback_data=f"close_table:{t['id']}",
                     )
                 ]
-                for t in tables["items"]
+                for t in items
             ]
         )
 
@@ -226,7 +228,7 @@ async def cb_finish_game(callback: CallbackQuery):
     game_id = int(callback.data.split(":")[1])
 
     try:
-        tables = await get_tables(tg_id=user.id, game_id=game_id)
+        tables = await get_tables(tg_id=user.id, game_id=game_id, organizer_id=user.id)
 
         items = tables.get("items", [])
 
@@ -238,7 +240,7 @@ async def cb_finish_game(callback: CallbackQuery):
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text=f"Table {t['number']} ({t.get('table_participants', '?')} players)",
+                        text=f"Table {t['number']} ({t.get('total_participants', '?')} players)",
                         callback_data=f"close_table:{t['id']}",
                     )
                 ]

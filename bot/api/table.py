@@ -20,9 +20,12 @@ async def join_table(tg_id: int, table_id: int):
     return response.json()
 
 
-async def get_tables(tg_id: int, game_id: int):
+async def get_tables(tg_id: int, game_id: int, organizer_id=None):
     try:
-        response = await client.get(f"/games/{game_id}/tables", params={"tg_id": tg_id})
+        if organizer_id is not None:
+            response = await client.get(f"/games/{game_id}/tables", params={"tg_id": tg_id, "organizer_id": organizer_id})
+        else:
+            response = await client.get(f"/games/{game_id}/tables", params={"tg_id": tg_id})
 
     except httpx.RequestError:
         raise APIError("Server unavailable", 503)
@@ -36,7 +39,7 @@ async def get_tables(tg_id: int, game_id: int):
 
 async def close_table(tg_id: int, table_id: int) -> dict:
     try:
-        response = await client.post(f"/tables/{table_id}/close", params={"tg_id": tg_id})
+        response = await client.post(f"/elo/tables/{table_id}/close", params={"tg_id": tg_id})
 
     except httpx.RequestError:
         raise APIError("Server unavailable", 503)

@@ -51,6 +51,7 @@ class TablePlayerInfo(BaseModel):
     id: int
     name: str
     chips: int
+    table_id: int | None = None
 
 
 class MyTableResponse(BaseModel):

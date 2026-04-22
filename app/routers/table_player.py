@@ -60,6 +60,7 @@ async def change_table_player_router(
 ):
     try:
         user = await check_player_tg_id(session, tg_id)
+        
         return await change_table_player(session, item, table_id, user.id, player_id)
 
     except ApplicationException as e:

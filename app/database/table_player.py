@@ -31,6 +31,15 @@ async def get_table_player_by_id(session, table_id, user_id):
     table_player = result.scalar_one_or_none()
     return table_player
 
+async def get_all_table_players_by_id(session, table_id):
+    result = await session.execute(
+        select(TablePlayer)
+        .options(selectinload(TablePlayer.player))
+        .options(selectinload(TablePlayer.table))
+        .where(TablePlayer.table_id == table_id)
+    )
+    table_players = result.scalars().all()
+    return table_players
 
 async def add_table_player(session, table_id, player_id):
     table_player = TablePlayer(table_id=table_id, player_id=player_id, started_at=datetime.utcnow())
@@ -90,3 +99,24 @@ async def get_active_player_table(session, player_id, game_id):
 
     table_player = result.scalars().first()
     return table_player
+
+
+async def get_active_table_map(session, game_id):
+    result = await session.execute(
+        select(TablePlayer.player_id, TablePlayer.table_id)
+        .join(Table)
+        .where(TablePlayer.is_active.is_(True))
+        .where(Table.game_id == game_id)
+    )
+
+    return {player_id: table_id for player_id, table_id in result.all()}
+
+
+async def get_player_chips_map(session, game_id):
+    result = await session.execute(
+        select(TablePlayer.player_id, TablePlayer.chips)
+        .where(TablePlayer.is_active.is_(True))
+        .where(Table.game_id == game_id)
+    )
+
+    return {player_id: chips for player_id, chips in result.all()}

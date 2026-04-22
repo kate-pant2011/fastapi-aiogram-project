@@ -26,7 +26,7 @@ async def get_table_list(session, limit, offset, game_id, organizer_id=None):
     for t in tables.items:
         data = to_schema(TableCountResponse, t)
         count = await table_participants_count(session, t.id)
-        data.total_participant = count
+        data.total_participants = count
         result.append(data)
 
     return {

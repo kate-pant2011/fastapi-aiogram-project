@@ -37,17 +37,30 @@ async def get_game_players_last_rating(session, game_id):
     return [{"player": row[0], "rating": row[1]} for row in result.all()]
 
 
-async def create_elo_history(session, table_player):
+async def create_elo_history(       
+        session,
+        player_id,
+        game_id,
+        table_id,
+        elo_before,
+        elo_after,
+        elo_change,
+        bounty_bonus,
+        position,
+        chips,
+        players_total,
+):
     elo = EloHistory(
-        player_id=table_player.player_id,
-        game_id=table_player.table.game_id,
-        table_id=table_player.table_id,
-        elo_before=0,
-        elo_after=0,
-        elo_change=0,
-        players_total=0,
-        position=table_player.position,
-        chips=table_player.chips,
+        player_id=player_id,
+        game_id=game_id,
+        table_id=table_id,
+        elo_before=elo_before,
+        elo_after=elo_after,
+        elo_change=elo_change,
+        bounty_bonus=bounty_bonus,
+        players_total=players_total,
+        position=position,
+        chips=chips,
     )
 
     session.add(elo)

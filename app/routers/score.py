@@ -6,10 +6,10 @@ from app.services.score import get_player_elo_history, get_game_rating, close_ta
 from app.schemas.score import EloListResponse, RatingListResponse, TableResultResponse
 from app.services.player import check_player_tg_id
 
-elo_router = APIRouter(prefix="/elo")
+elo_router = APIRouter()
 
 
-@elo_router.get("/players/{player_id}", response_model=EloListResponse)
+@elo_router.get("/elo/players/{player_id}", response_model=EloListResponse)
 async def get_player_elo_history_router(
     player_id: int,
     tg_id: int = Query("active_player_check"),
@@ -25,7 +25,7 @@ async def get_player_elo_history_router(
         raise HTTPException(status_code=e.code, detail=e.name)
 
 
-@elo_router.get("/games/{game_id}/rating", response_model=RatingListResponse)
+@elo_router.get("/elo/games/{game_id}/rating", response_model=RatingListResponse)
 async def get_game_rating_router(
     game_id: int,
     tg_id: int = Query("active_player_check"),
@@ -39,7 +39,7 @@ async def get_game_rating_router(
         raise HTTPException(status_code=e.code, detail=e.name)
 
 
-@elo_router.post("/tables/{table_id}/close", response_model=TableResultResponse)
+@elo_router.post("/elo/tables/{table_id}/close", response_model=TableResultResponse)
 async def close_table_router(
     table_id: int,
     tg_id: int = Query("active_player_check"),

@@ -7,7 +7,7 @@ from typing import Literal
 class TableCountResponse(BaseModel):
     id: int
     number: int
-    total_participant: int | None = None
+    total_participants: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -5,7 +5,7 @@ from app.database.player import (
     add_player,
 )
 from app.database.game import get_active_game, get_game_players
-from app.database.table_player import get_active_player_table, get_table_players_by_id
+from app.database.table_player import get_active_player_table, get_table_players_by_id, get_active_table_map, get_player_chips_map
 from app.config.config import ApplicationException
 from app.schemas.common import to_schema
 from app.schemas.player import PlayerResponse, LeaderboardResponse
@@ -167,6 +167,7 @@ async def get_my_table(session, player_id):
                     "id": tp.player.id,
                     "name": tp.player.name,
                     "chips": tp.chips or 0,
+                    "table_id": table.id
                 }
                 for tp in players
             ],
@@ -176,6 +177,8 @@ async def get_my_table(session, player_id):
         players_data = await get_game_players(session, game.id, limit=50, offset=0)
 
         players = players_data.items
+        table_map = await get_active_table_map(session, game.id)
+        chips_map = await get_player_chips_map(session, game.id)
 
         return {
             "scope": "game",
@@ -185,7 +188,8 @@ async def get_my_table(session, player_id):
                 {
                     "id": p.player.id,
                     "name": p.player.name,
-                    "chips": p.chips or 0,
+                    "chips": chips_map.get(p.player.id),
+                    "table_id": table_map.get(p.player.id)
                 }
                 for p in players
             ],
@@ -193,3 +197,4 @@ async def get_my_table(session, player_id):
 
     if not table_player:
         raise ApplicationException("Player not at table", 404)
+
