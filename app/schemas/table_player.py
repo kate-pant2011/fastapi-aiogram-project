@@ -11,6 +11,7 @@ class TablePlayerShort(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+
 class TablePlayerResponse(BaseModel):
     id: int
     player: BaseShortResponse
@@ -24,6 +25,26 @@ class TablePlayerResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class PlayerKnockoutResponse(BaseModel):
+    id: int
+    name: str
+    telegram_id: int 
+
+    model_config = ConfigDict(from_attributes=True)
+
+class TablePlayerKnockout(BaseModel):
+    id: int
+    player: PlayerKnockoutResponse
+    table: TableShortResponse
+    started_at: datetime
+    finished_at: datetime | None
+    is_active: bool
+    position: int | None
+    chips: int
+    eliminator_name: str | None = None
+    table_participants: int | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class TablePlayerPatch(BaseModel):
     chips: int | None = Field(None, ge=0)

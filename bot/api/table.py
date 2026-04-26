@@ -22,10 +22,7 @@ async def join_table(tg_id: int, table_id: int):
 
 async def get_tables(tg_id: int, game_id: int, organizer_id=None):
     try:
-        if organizer_id is not None:
-            response = await client.get(f"/games/{game_id}/tables", params={"tg_id": tg_id, "organizer_id": organizer_id})
-        else:
-            response = await client.get(f"/games/{game_id}/tables", params={"tg_id": tg_id})
+        response = await client.get(f"/games/{game_id}/tables", params={"tg_id": tg_id})
 
     except httpx.RequestError:
         raise APIError("Server unavailable", 503)

@@ -15,7 +15,7 @@ from app.schemas.common import BaseShortResponse
 from datetime import datetime
 from app.models.game import Status, GameStatus
 from app.database.score import get_elo_history_by_player
-from app.database.table import add_tables
+from app.database.table import add_tables, get_active_tables, get_all_tables
 from app.services.player import check_player_tg_id
 from sqlalchemy.exc import IntegrityError
 import math
@@ -188,21 +188,38 @@ async def distribute_tables(session, game_id, user_id):
 
     if game.organizer_id != user_id:
         raise ApplicationException("Only organizer can distribute tables", 400)
-
-    tables = game.tables
+    
+    sorting_rules = {"number": ("number",)}
+    tables = await get_all_tables(
+        session=session, limit=20, offset=0, game_id=game_id, sorting_rules=sorting_rules
+    )
+    tables = tables.items
     if not tables:
         round_number = 1
     else:
         if any(t.finished_at is None for t in tables):
             raise ApplicationException("There are active tables, cannot start new round", 400)
-        round_number = max(t.round for t in tables) + 1
+        
+        round_number = 2
+    
+        if any(t.round == 2 for t in tables):
+            raise ApplicationException("The max round-numbers are two, cannot start new round", 400)
 
     game.start_time = datetime.utcnow()
     game.status = GameStatus.IN_ACTION
 
     # count tables logic:
     players_number = await get_game_players_count(session, game_id)
-    tables_size_list = split_tables(players_number)
+
+    if players_number < 15:
+        tables_size_list = split_tables(players=players_number, max_per_table=4)
+
+    elif players_number < 20:
+        tables_size_list =split_tables(players=players_number, max_per_table=5)
+
+    else:
+        tables_size_list =split_tables(players=players_number, max_per_table=6)
+    
 
     # create tables logic:
     new_table_item = NewTablesDTO(
@@ -225,9 +242,8 @@ async def distribute_tables(session, game_id, user_id):
     await session.commit()
     session.expire_all()
     updated_game = await get_game_by_id(session, game_id)
-    ans = updated_game.name
 
-    
+
     return await build_distribute_response(updated_game, updated_game.tables)
 
 
@@ -235,6 +251,9 @@ async def build_distribute_response(game, tables):
     result_tables = []
 
     for table in tables:
+        if table.finished_at is not None:
+            continue
+        
         players = []
 
         for tp in table.table_participants:
@@ -263,7 +282,7 @@ async def build_distribute_response(game, tables):
     }
 
 
-def split_tables(players: int, max_per_table: int = 7):
+def split_tables(players: int, max_per_table: int):
     tables = math.ceil(players / max_per_table)
     
     base = players // tables

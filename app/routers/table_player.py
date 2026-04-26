@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.config import ApplicationException
 from app.config.connection import get_db
-from app.schemas.table_player import TablePlayerResponse, TablePlayerPatch
+from app.schemas.table_player import TablePlayerResponse, TablePlayerPatch, TablePlayerKnockout
 from app.services.player import check_player_tg_id
 from app.services.table_player import (
     get_table_players,
@@ -45,6 +45,7 @@ async def add_player_at_table_player_router(
         raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})
 
     except Exception as e:
+        print(f"ERRRRORRRR {e}")
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
 
 
@@ -71,7 +72,7 @@ async def change_table_player_router(
 
 
 @table_player_router.post(
-    "/tables/{table_id}/players/{player_id}/finish", response_model=TablePlayerResponse
+    "/tables/{table_id}/players/{player_id}/finish", response_model=TablePlayerKnockout
 )
 async def leave_table_router(
     table_id: int,
@@ -82,7 +83,7 @@ async def leave_table_router(
 ):
     try:
         user = await check_player_tg_id(session, tg_id)
-        return await leave_table(session, item, table_id, user.id, player_id)
+        return await leave_table(session, item, table_id, user.id, player_id, user.name)
 
     except ApplicationException as e:
         raise HTTPException(status_code=e.code, detail={"message": e.name, "payload": e.payload})

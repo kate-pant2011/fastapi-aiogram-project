@@ -6,9 +6,11 @@ from app.database.score import (
 from app.config.config import ApplicationException
 from app.schemas.common import to_schema
 from app.database.table import get_table_by_id
-from app.database.table_player import get_table_players_by_id, get_all_table_players_by_id
+from app.database.table_player import get_all_table_players_by_id
+from app.services.game import check_game_by_id
 from app.schemas.score import EloHistoryResponse
 from app.schemas.common import BaseShortResponse
+from app.models.game import GameStatus
 from datetime import datetime
 from collections import defaultdict
 
@@ -100,6 +102,7 @@ async def close_table_and_update_elo(session, table_id, user_id):
             chips=tp.chips,
             players_total=total_players,
         )
+        print(f" LOOOOOOOOOOOOOK {tp.chips}")
 
         tp.is_active = False
         tp.finished_at = datetime.utcnow()
@@ -119,7 +122,17 @@ async def close_table_and_update_elo(session, table_id, user_id):
             }
         )
 
+
+    game = await check_game_by_id(session, table.game_id)
+
+    open_tables = [t for t in game.tables if t.finished_at is None]
+
+    if table.round == 2 and len(open_tables) == 1:
+        game.status = GameStatus.FINISHED
+        game.is_archived = True
+
     table.finished_at = datetime.utcnow()
+    await session.flush()
 
     elo_results.sort(key=lambda x: x["position"])
 

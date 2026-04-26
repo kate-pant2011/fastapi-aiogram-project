@@ -1,5 +1,5 @@
 from app.database.table import (
-    get_all_tables,
+    get_active_tables,
     get_table_by_id,
     add_tables,
 )
@@ -20,7 +20,7 @@ async def get_table_list(session, limit, offset, game_id, organizer_id=None):
     if organizer_id is not None and organizer_id != game.organizer_id:
         raise ApplicationException("Only organizer can view tables", 403)
 
-    tables = await get_all_tables(session, limit, offset, game_id, sorting_rules)
+    tables = await get_active_tables(session, limit, offset, game_id, sorting_rules)
 
     result = []
     for t in tables.items:

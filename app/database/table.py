@@ -6,8 +6,17 @@ from app.models.game import Game
 from app.models.table_player import TablePlayer
 
 
-async def get_all_tables(session, limit, offset, game_id, sorting_rules):
+async def get_active_tables(session, limit, offset, game_id, sorting_rules):
     stmt = select(Table).where(Table.game_id == game_id).where(Table.finished_at.is_(None))
+
+    stmt = apply_sorting(stmt=stmt, model=Table, sort="number", sorting_rules=sorting_rules)
+
+    result = await get_all_and_total(session, stmt, limit, offset)
+    return result
+
+
+async def get_all_tables(session, limit, offset, game_id, sorting_rules):
+    stmt = select(Table).where(Table.game_id == game_id)
 
     stmt = apply_sorting(stmt=stmt, model=Table, sort="number", sorting_rules=sorting_rules)
 

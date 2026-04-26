@@ -188,7 +188,7 @@ async def get_my_table(session, player_id):
                 {
                     "id": p.player.id,
                     "name": p.player.name,
-                    "chips": chips_map.get(p.player.id),
+                    "chips": chips_map.get(p.player.id, 0),
                     "table_id": table_map.get(p.player.id)
                 }
                 for p in players

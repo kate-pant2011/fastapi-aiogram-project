@@ -112,9 +112,9 @@ async def cb_join_game(callback: CallbackQuery):
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"🪑 Table {t['number']} ({t['total_participant']}/8)",
+                    text=f"🪑 Table {t['number']} ({t['total_participants']}/9)",
                     callback_data=f"join_table:{t['id']}"
-                    if t["total_participant"] < 8
+                    if t["total_participants"] < 9
                     else "table_full",
                 )
             ]
@@ -373,7 +373,9 @@ async def cb_knockout(callback: CallbackQuery):
     player_id = int(player_id)
 
     try:
-        await knockout_player_api(tg_id=user.id, table_id=table_id, player_id=player_id)
+        data = await knockout_player_api(tg_id=user.id, table_id=table_id, player_id=player_id)
+        eliminated = data.get("player")
+
     except APIError as e:
         await callback.answer(e.message, show_alert=True)
         return
@@ -383,4 +385,13 @@ async def cb_knockout(callback: CallbackQuery):
         return
 
     await callback.message.edit_text("✅ Knockout recorded")
+
+    try:
+        await callback.bot.send_message(
+            chat_id=eliminated["telegram_id"],
+            text=f"💀 You have been eliminated by {data["eliminator_name"]}",
+        )
+    except Exception:
+        pass
+
     await callback.answer()

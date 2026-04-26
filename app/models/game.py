@@ -22,6 +22,7 @@ class GameStatus(str, Enum):
     AWAITED = "awaited"
     IN_ACTION = "in_action"
     CANCELED = "canceled"
+    FINISHED = "finished"
 
 
 class Game(BaseModel):

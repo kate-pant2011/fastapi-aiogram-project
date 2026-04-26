@@ -43,7 +43,7 @@ async def cmd_start(message: Message):
         keyboard.append([
             InlineKeyboardButton(
                 text=f"{g['name']}",
-                callback_data=f"start_game:{g['id']}"
+                callback_data=f"start_game:{g['id']}:{g['name']}"
             )
         ])
 
@@ -127,7 +127,9 @@ async def cb_start_game(callback: CallbackQuery):
     if not user:
         return
 
-    game_id = int(callback.data.split(":")[1])
+    game_data = callback.data.split(":")
+    game_id = int(game_data[1])
+    game_name = game_data[2]
 
     try:
         data = await distribute_tables_api(game_id=game_id, tg_id=user.id)
@@ -135,7 +137,7 @@ async def cb_start_game(callback: CallbackQuery):
         await callback.answer(e.message, show_alert=True)
         return
 
-    text = [f"🎮 Game #{game_id} started!\n"]
+    text = [f"🎮 Game '{game_name}' started!\n"]
 
     for table in data["tables"]:
         text.append(f"Table {table['number']}:")
@@ -228,7 +230,7 @@ async def cb_finish_game(callback: CallbackQuery):
     game_id = int(callback.data.split(":")[1])
 
     try:
-        tables = await get_tables(tg_id=user.id, game_id=game_id, organizer_id=user.id)
+        tables = await get_tables(tg_id=user.id, game_id=game_id)
 
         items = tables.get("items", [])
 

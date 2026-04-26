@@ -24,6 +24,7 @@ async def get_table_player_by_id(session, table_id, user_id):
         select(TablePlayer)
         .options(selectinload(TablePlayer.player))
         .options(selectinload(TablePlayer.table))
+        .options(selectinload(TablePlayer.eliminator))
         .where(TablePlayer.table_id == table_id)
         .where(TablePlayer.player_id == user_id)
         .where(TablePlayer.is_active == True)
@@ -40,6 +41,7 @@ async def get_all_table_players_by_id(session, table_id):
     )
     table_players = result.scalars().all()
     return table_players
+
 
 async def add_table_player(session, table_id, player_id):
     table_player = TablePlayer(table_id=table_id, player_id=player_id, started_at=datetime.utcnow())
@@ -115,6 +117,7 @@ async def get_active_table_map(session, game_id):
 async def get_player_chips_map(session, game_id):
     result = await session.execute(
         select(TablePlayer.player_id, TablePlayer.chips)
+        .join(Table)  
         .where(TablePlayer.is_active.is_(True))
         .where(Table.game_id == game_id)
     )
