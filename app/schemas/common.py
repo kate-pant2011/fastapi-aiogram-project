@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Type
+from zoneinfo import ZoneInfo
 
 
 def to_schema(pydantic_item: Type[BaseModel], orm_obj):
@@ -22,3 +23,9 @@ class BaseListResponse(BaseModel):
 
 class ResultResponse(BaseModel):
     result: str
+
+
+def to_moscow(dt):
+    if not dt:
+        return None
+    return dt.astimezone(ZoneInfo("Europe/Moscow"))

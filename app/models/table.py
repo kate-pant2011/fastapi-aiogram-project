@@ -9,8 +9,8 @@ class Table(BaseModel):
     number = Column(Integer, nullable=False)
     round = Column(Integer, nullable=False)
 
-    started_at = Column(DateTime, nullable=True)
-    finished_at = Column(DateTime, nullable=True)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
 
     game_id = Column(Integer, ForeignKey("games.id"), nullable=False)
     game = relationship("Game", back_populates="tables")

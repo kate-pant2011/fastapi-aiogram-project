@@ -20,6 +20,20 @@ async def get_active_games(tg_id: int) -> dict | None:
     return response.json()
 
 
+async def get_game_api(game_id: int, tg_id: int):
+    try:
+        response = await client.get(f"/games/{game_id}/players", params={"tg_id": tg_id})
+
+    except httpx.RequestError:
+        raise APIError("Server unavailable", 503)
+
+    if response.status_code >= 400:
+        message, payload = parse_error(response)
+        raise APIError(message, response.status_code, payload)
+
+    return response.json()
+
+
 async def get_game_in_action(tg_id: int) -> dict | None:
     try:
         response = await client.get(
@@ -37,12 +51,12 @@ async def get_game_in_action(tg_id: int) -> dict | None:
     return response.json()
 
 
-async def add_new_game(tg_id: int, name: str, start_time: datetime):
+async def add_new_game(tg_id: int, name: str, start_time: datetime, chat_id: int):
     try:
         response = await client.post(
             f"/games", 
             params={"tg_id": tg_id},
-            json={"name": name, "start_time":start_time}
+            json={"name": name, "start_time":start_time, "chat_id": chat_id}
         )
 
     except httpx.RequestError:
@@ -72,6 +86,20 @@ async def join_game(tg_id: int, game_id: int):
 async def leave_game(tg_id: int, game_id: int):
     try:
         response = await client.post(f"/games/{game_id}/leave", params={"tg_id": tg_id})
+
+    except httpx.RequestError:
+        raise APIError("Server unavailable", 503)
+
+    if response.status_code >= 400:
+        message, payload = parse_error(response)
+        raise APIError(message, response.status_code, payload)
+
+    return response.json()
+
+
+async def remove_from_game(tg_id: int, game_id: int, player_id: int):
+    try:
+        response = await client.post(f"/games/{game_id}/leave", params={"tg_id": tg_id, "player_id": player_id})
 
     except httpx.RequestError:
         raise APIError("Server unavailable", 503)

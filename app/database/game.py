@@ -57,6 +57,7 @@ async def get_game_by_id(session, id):
     result = await session.execute(
         select(Game)
         .options(selectinload(Game.players))
+        .options(selectinload(Game.telegram_chat))
         .options(
             selectinload(Game.tables)
             .selectinload(Table.table_participants)
@@ -83,7 +84,9 @@ async def is_player_in_game(session, player_id, game_id):
 
 
 async def add_game(session, item, user_id):
-    game = Game(name=item.name, start_time=item.start_time, organizer_id=user_id)
+    game = Game(
+        name=item.name, start_time=item.start_time, telegram_chat_id=item.chat_id, organizer_id=user_id
+    )
     session.add(game)
     await session.flush()
     return game

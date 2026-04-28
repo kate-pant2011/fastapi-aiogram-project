@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field
-from .common import BaseShortResponse
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from .common import BaseShortResponse, to_moscow
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Literal
+
 
 
 class TableCountResponse(BaseModel):
@@ -36,7 +38,11 @@ class TableResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
+    @field_serializer("started_at", "finished_at")
+    def serialize_datetime(self, dt):
+        return to_moscow(dt)
+    
+    
 class TablesAddRequest(BaseModel):
     total_tables: int = Field(gt=0)
     round: Literal[1, 2]
@@ -49,3 +55,13 @@ class TablePatchRequest(BaseModel):
     round: int | None = Field(None, gt=0)
 
     model_config = {"extra": "forbid"}
+
+    @field_validator("started_at", "finished_at")
+    def normalize_datetime(cls, dt):
+        if dt is None:
+            return None
+
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=ZoneInfo("Europe/Moscow"))
+
+        return dt.astimezone(timezone.utc)

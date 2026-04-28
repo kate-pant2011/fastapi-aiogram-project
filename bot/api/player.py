@@ -4,6 +4,23 @@ from bot.utils.http_client import client
 
 BASE_URL = settings.BASE_URL
 
+async def get_player(tg_id: int):
+    try:
+        response = await client.get(
+            f"/players/tg/{tg_id}",
+        )
+
+    except httpx.RequestError:
+        raise APIError("Server unavailable", 503)
+
+    if response.status_code == 404:
+        return "404"
+    elif  response.status_code >= 400:
+        message, payload = parse_error(response)
+        raise APIError(message, response.status_code, payload)
+
+    return response.json()
+
 
 async def register_player(tg_id: int, name: str):
     try:

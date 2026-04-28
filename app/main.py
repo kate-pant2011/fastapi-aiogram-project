@@ -8,6 +8,7 @@ from app.routers.player import player_router
 from app.routers.score import elo_router
 from app.routers.table import table_router
 from app.routers.game import game_router
+from app.routers.tgchat import tgchat_router
 
 app = FastAPI()
 
@@ -18,6 +19,7 @@ app.include_router(player_router)
 app.include_router(elo_router)
 app.include_router(table_router)
 app.include_router(game_router)
+app.include_router(tgchat_router)
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

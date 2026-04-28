@@ -4,7 +4,7 @@ from app.schemas.common import BaseShortResponse
 from app.schemas.table_player import TablePlayerResponse, TablePlayerKnockout
 from app.services.player import check_player_by_id
 from app.services.game import check_game_by_id
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database.table import get_table_by_id
 from app.database.table_player import (
     get_table_players_by_id,
@@ -110,7 +110,7 @@ async def patch_table_rights(session, table_id, user_id, player_id):
 async def leave_table(session, item, table_id, user_id, player_id, user_name):
     table_player, user_rights = await patch_table_rights(session, table_id, user_id, player_id)
 
-    finished_at = datetime.utcnow()
+    finished_at = datetime.now(timezone.utc)
 
     if table_player.started_at > finished_at:
         raise ApplicationException("End-date cannot be less than start-date", 400)
@@ -121,7 +121,6 @@ async def leave_table(session, item, table_id, user_id, player_id, user_name):
     table_player.is_active = False
     if item.chips:
         table_player.chips = item.chips or 0
-    print(f" LEFT-LOOOOOOOOOOOOOK {table_player.chips}")
     table_player.position = total_participants
 
     if item.eliminated:
@@ -143,7 +142,6 @@ async def change_table_player(session, item, table_id, user_id, player_id):
 
     total_participants = await table_participants_count(session, table_id)
     table_player.chips = item.chips or 0
-    print(f" CHIPS-LOOOOOOOOOOOOOK {table_player.chips}")
 
     data = to_schema(TablePlayerResponse, table_player)
 

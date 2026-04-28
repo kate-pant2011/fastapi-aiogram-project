@@ -7,7 +7,6 @@ venv/
 .idea/
 .vscode/
 config/
-alembic/
 *.log
 *app.log*
 **/config.py

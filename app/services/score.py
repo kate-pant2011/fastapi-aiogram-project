@@ -11,7 +11,7 @@ from app.services.game import check_game_by_id
 from app.schemas.score import EloHistoryResponse
 from app.schemas.common import BaseShortResponse
 from app.models.game import GameStatus
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 async def get_player_elo_history(session, player_id, limit, offset):
@@ -102,10 +102,9 @@ async def close_table_and_update_elo(session, table_id, user_id):
             chips=tp.chips,
             players_total=total_players,
         )
-        print(f" LOOOOOOOOOOOOOK {tp.chips}")
 
         tp.is_active = False
-        tp.finished_at = datetime.utcnow()
+        tp.finished_at = datetime.now(timezone.utc)
 
 
         elo_results.append(
@@ -131,7 +130,7 @@ async def close_table_and_update_elo(session, table_id, user_id):
         game.status = GameStatus.FINISHED
         game.is_archived = True
 
-    table.finished_at = datetime.utcnow()
+    table.finished_at = datetime.now(timezone.utc)
     await session.flush()
 
     elo_results.sort(key=lambda x: x["position"])
@@ -140,6 +139,8 @@ async def close_table_and_update_elo(session, table_id, user_id):
         "id": table.id,
         "number": table.number,
         "game_id": table.game_id,
+        "chat_id":game.telegram_chat_id or None,
+        "thread_id": game.telegram_chat.thread_id or None,
         "elo_history": elo_results,
     }
 

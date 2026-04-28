@@ -179,11 +179,15 @@ async def join_game_router(
 @game_router.post("/games/{game_id}/leave", response_model=ResultResponse)
 async def leave_game_router(
     game_id: int,
+    player_id: int | None = Query(default=None),
     tg_id: int = Query(description="checking active player"),
     session: AsyncSession = Depends(get_db),
 ):
     try:
         player = await check_player_tg_id(session, tg_id)
+        if player_id:
+            return await leave_game(session, game_id, player_id)
+        
         return await leave_game(session, game_id, player.id)
 
     except ApplicationException as e:

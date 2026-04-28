@@ -1,7 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
-from .common import BaseShortResponse
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from .common import BaseShortResponse, to_moscow
 from .table import TableShortResponse
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Literal
 
 
@@ -9,7 +10,6 @@ class TablePlayerShort(BaseModel):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
-
 
 
 class TablePlayerResponse(BaseModel):
@@ -25,12 +25,17 @@ class TablePlayerResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_serializer("started_at", "finished_at")
+    def serialize_datetime(self, dt):
+        return to_moscow(dt)
+
 class PlayerKnockoutResponse(BaseModel):
     id: int
     name: str
     telegram_id: int 
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class TablePlayerKnockout(BaseModel):
     id: int
@@ -45,6 +50,11 @@ class TablePlayerKnockout(BaseModel):
     table_participants: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("started_at", "finished_at")
+    def serialize_datetime(self, dt):
+        return to_moscow(dt)
+    
 
 class TablePlayerPatch(BaseModel):
     chips: int | None = Field(None, ge=0)

@@ -12,7 +12,7 @@ from app.config.config import ApplicationException
 from app.schemas.common import to_schema
 from app.schemas.game import GameResponse, GPPlayerResponse
 from app.schemas.common import BaseShortResponse
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models.game import Status, GameStatus
 from app.database.score import get_elo_history_by_player
 from app.database.table import add_tables, get_active_tables, get_all_tables
@@ -143,7 +143,7 @@ async def leave_game(session, game_id, player_id):
 
         if existing:
             raise ApplicationException(
-                f"To leave game please leave table {existing.table.number}_{existing.table.id}", 400
+                f"To leave game please leave table {existing.table.number}", 400
             )
 
     in_game.status = Status.LEFT
@@ -205,7 +205,7 @@ async def distribute_tables(session, game_id, user_id):
         if any(t.round == 2 for t in tables):
             raise ApplicationException("The max round-numbers are two, cannot start new round", 400)
 
-    game.start_time = datetime.utcnow()
+    game.start_time = datetime.now(timezone.utc)
     game.status = GameStatus.IN_ACTION
 
     # count tables logic:
@@ -278,6 +278,8 @@ async def build_distribute_response(game, tables):
 
     return {
         "game_id": game.id,
+        "chat_id": game.telegram_chat_id or None,
+        "thread_id":game.telegram_chat.thread_id or None,
         "tables": result_tables,
     }
 

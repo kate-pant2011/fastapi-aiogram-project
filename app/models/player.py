@@ -20,3 +20,5 @@ class Player(BaseModel):
 
     eliminations = relationship("TablePlayer", foreign_keys="TablePlayer.eliminated_by_id", back_populates="eliminator")
     elo_history = relationship("EloHistory", back_populates="player")
+
+    telegram_chats = relationship("TelegramChat", back_populates="activator")

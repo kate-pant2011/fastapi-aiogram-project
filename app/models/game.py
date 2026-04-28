@@ -8,6 +8,7 @@ from sqlalchemy import (
     Enum as SQLEnum,
     UniqueConstraint,
     DateTime,
+    BigInteger
 )
 from sqlalchemy.orm import relationship
 from enum import Enum
@@ -29,7 +30,7 @@ class Game(BaseModel):
     __tablename__ = "games"
 
     name = Column(String, nullable=False)
-    start_time = Column(DateTime, nullable=True)
+    start_time = Column(DateTime(timezone=True), nullable=True)
     status = Column(
         SQLEnum(GameStatus, name="game_status"),
         nullable=False,
@@ -45,6 +46,9 @@ class Game(BaseModel):
     tables = relationship("Table", back_populates="game")
     elo_history = relationship("EloHistory", back_populates="game")
 
+    telegram_chat_id = Column(BigInteger, ForeignKey("telegram_chats.chat_id"), nullable=True)
+    telegram_chat = relationship("TelegramChat", back_populates="games")
+    
 
 class GamePlayer(BaseModel):
     __tablename__ = "game_players"

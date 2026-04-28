@@ -50,4 +50,6 @@ class TableResultResponse(BaseModel):
     id: int
     number: int
     game_id: int
+    chat_id: int | None
+    thread_id: int | None
     elo_history: list[EloTableResult]
