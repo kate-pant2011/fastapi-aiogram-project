@@ -196,14 +196,14 @@ async def distribute_tables(session, game_id, user_id):
     tables = tables.items
     if not tables:
         round_number = 1
-    else:
-        if any(t.finished_at is None for t in tables):
-            raise ApplicationException("There are active tables, cannot start new round", 400)
+    #else:
+        #if any(t.finished_at is None for t in tables):
+            #raise ApplicationException("There are active tables, cannot start new round", 400)
         
-        round_number = 2
+        #round_number = 2
     
-        if any(t.round == 2 for t in tables):
-            raise ApplicationException("The max round-numbers are two, cannot start new round", 400)
+    if any(t.round == 1 for t in tables):
+        raise ApplicationException("The max round-numbers is one, cannot start new round", 400)
 
     game.start_time = datetime.now(timezone.utc)
     game.status = GameStatus.IN_ACTION
@@ -211,14 +211,11 @@ async def distribute_tables(session, game_id, user_id):
     # count tables logic:
     players_number = await get_game_players_count(session, game_id)
 
-    if players_number < 15:
-        tables_size_list = split_tables(players=players_number, max_per_table=4)
-
-    elif players_number < 20:
-        tables_size_list =split_tables(players=players_number, max_per_table=5)
+    if players_number < 20:
+        tables_size_list =split_tables(players=players_number, max_per_table=6)
 
     else:
-        tables_size_list =split_tables(players=players_number, max_per_table=6)
+        tables_size_list =split_tables(players=players_number, max_per_table=8)
     
 
     # create tables logic:

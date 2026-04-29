@@ -211,5 +211,4 @@ async def distribute_tables_router(
         raise HTTPException(status_code=e.code, detail=e.name)
 
     except Exception as e:
-        print(f"EEEEERRRROR {e}")
         raise HTTPException(status_code=500, detail=f"{type(e).__name__} - {e}")
