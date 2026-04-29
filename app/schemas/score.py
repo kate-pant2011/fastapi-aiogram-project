@@ -42,6 +42,7 @@ class EloTableResult(BaseModel):
     game_id: int
     elo_change: float
     bounty_bonus: float
+    chips_bonus: float
     position: int
     chips: int
 

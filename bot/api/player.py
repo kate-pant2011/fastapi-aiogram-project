@@ -39,7 +39,7 @@ async def register_player(tg_id: int, name: str):
     return response.json()
 
 
-async def get_leaderboard(tg_id: int, limit: int = 20):
+async def get_leaderboard(tg_id: int, limit: int = 50):
     try:
         response = await client.get("/players/leaderboard", params={"tg_id": tg_id, "limit": limit})
 

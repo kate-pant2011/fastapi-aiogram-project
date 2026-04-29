@@ -30,7 +30,7 @@ player_router = APIRouter()
 async def get_player_list_router(
     tg_id: int = Query(description="checking active player"),
     session: AsyncSession = Depends(get_db),
-    limit: int = Query(default=20, le=100),
+    limit: int = Query(default=50, le=100),
     offset: int = Query(default=0),
 ):
     try:
@@ -59,7 +59,6 @@ async def get_leaderboard_router(
         raise HTTPException(status_code=e.code, detail=e.name)
 
     except Exception as e:
-        print(f"EEEEE {e}")
         raise HTTPException(status_code=500, detail=f" {type(e).__name__} - {e}")
 
 

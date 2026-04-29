@@ -54,10 +54,11 @@ async def close_table_and_update_elo(session, table_id, user_id):
     if not table_players:
         raise ApplicationException("No players at table", 400)
 
-
     elo_results = []
     players = [tp.player for tp in table_players]
     total_players = len(players)
+    total_chips = sum(tp.chips for tp in table_players)
+    avg_chips = total_chips / total_players if total_players > 0 else 0
     knockouts_map = defaultdict(list)
     players_map = {p.id: p for p in players}
 
@@ -83,8 +84,9 @@ async def close_table_and_update_elo(session, table_id, user_id):
         )
 
         bounty = bounty_bonus(player.id, knockouts_map, players_map)
+        chips_bonus = calculate_chips_bonus(tp.chips, avg_chips)
 
-        total_change = elo_change + bounty
+        total_change = elo_change + bounty + chips_bonus
         elo_after = max(100, elo_before + total_change)
 
         player.elo = elo_after
@@ -98,6 +100,7 @@ async def close_table_and_update_elo(session, table_id, user_id):
             elo_after=round(elo_after, 2),
             elo_change=round(elo_change, 2),
             bounty_bonus=round(bounty, 2),
+            chips_bonus=chips_bonus,
             position=tp.position,
             chips=tp.chips,
             players_total=total_players,
@@ -116,6 +119,7 @@ async def close_table_and_update_elo(session, table_id, user_id):
                 "game_id": table.game_id,
                 "elo_change": round(elo_change, 2),
                 "bounty_bonus": round(bounty, 2),
+                "chips_bonus": round(chips_bonus, 2),
                 "position": tp.position,
                 "chips": tp.chips,
             }
@@ -149,7 +153,7 @@ def elo_delta(player, opponents, position, total_players):
     s = actual_score(position, total_players)
     e = expected_score(player.elo, opponents)
     k = k_factor(player.games_played, player.elo)
-    return k * (total_players - 1) * (s - e)
+    return k * (s - e)
 
 def bounty_bonus(player_id, knockouts_map, players_map):
     victims = knockouts_map.get(player_id, [])
@@ -168,14 +172,25 @@ def expected_score(player_elo, opponents):
     ) / len(opponents)
 
 def actual_score(position, total):
-    return (total - position) / (total - 1) if total > 1 else 1.0
+    if total <= 1:
+        return 1.0
+
+    base_score = (total - position) / (total - 1)
+    return 0.1 + (base_score * 0.8)
 
 def k_factor(games_played, elo):
     if games_played < 10:
-        return 40
+        return 30 
     if elo < 1400:
-        return 20
+        return 15
     return 10
+
+def calculate_chips_bonus(player_chips: int, avg_chips: float) -> float:
+    if avg_chips == 0 or player_chips <= avg_chips:
+        return 0.0
+    
+    bonus = ((player_chips - avg_chips) / avg_chips) * 10.0
+    return round(bonus, 2)
 
 
 def assign_positions(table_players):
@@ -189,3 +204,4 @@ def assign_positions(table_players):
     for tp in active:
         tp.position = current_position
         current_position += 1
+

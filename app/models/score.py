@@ -19,6 +19,7 @@ class EloHistory(BaseModel):
     elo_after = Column(Float, nullable=False, default=0)
     elo_change = Column(Float, nullable=True)
 
+    chips_bonus = Column(Float, nullable=True, default=0.0)
     bounty_bonus = Column(Float, nullable=True)
     players_total = Column(Integer)
     position = Column(Integer)
